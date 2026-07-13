@@ -33,8 +33,8 @@ updated: 2026-07-14
 ## 현재 스냅샷 (2026-07-14)
 - **진행:** 7/23 청크 완료 (K·J·I·H·G·F·E), download_queue **139항목**, UNRESOLVED 1건.
 - **모델:** 대량 정제는 **Sonnet 5**(서브에이전트 위임)로 전환 완료. Opus는 설계·의심항목 재검증만.
-- **GitHub:** `https://github.com/jtthw64-create/judges-report` (private) 연결됨.
-  - ⚠️ **로컬이 origin보다 4커밋 앞서 있고 아직 push 전** (이 세션에서 push 확인 대기 중이었음). 새 PC 작업 전에 **push 여부부터 결정**할 것 — 안 하면 GitHub가 낡은 상태로 남음.
+- **GitHub:** `https://github.com/jtthw64-create/judges-report` 연결·**push 완료**(2026-07-14). SSH 인증 등록됨(`~/.ssh/id_ed25519.pub`, 새 PC는 별도 키 등록 필요 — 방법 B: Terminal.app에서 `git push` 시 브라우저 인증 유도, 또는 새 PC의 공개키를 GitHub Settings→SSH keys에 추가).
+  - remote는 SSH(`git@github.com:...`)로 설정됨. HTTPS는 이 환경(비대화형 셸)에서 인증 불가했음.
 - **배포(대시보드 공유):** 아직 미착수. 결정된 방향 = GitHub Pages(뷰) + Google Sheets(협업·코멘트) 병행. Pages는 push 후 repo Settings에서 Source 설정 필요.
 - **다음 배치:** D-01 (Deborah·Jael·Barak 4-5, 62건).
 
