@@ -20,7 +20,7 @@ updated: 2026-07-13
 | 3 | I-01 | Ehud | 6 | DONE | 2026-07-13 | worklist/I-01.csv |
 | 4 | H-01 | Gibeah·Concubine | 17 | DONE | 2026-07-13 | worklist/H-01.csv |
 | 5 | G-01 | Micah·Danites | 24 | DONE | 2026-07-13 | worklist/G-01.csv |
-| 6 | F-01 | Jephthah | 35 | NEW | | |
+| 6 | F-01 | Jephthah | 35 | DONE | 2026-07-14 | worklist/F-01.csv |
 | 7 | E-01 | Gideon·Abimelech | 61 | NEW | | |
 | 8 | D-01 | Deborah·Jael·Barak | 62 | NEW | | |
 | 9 | C-01 | Samson | 133 | NEW | | |
@@ -40,17 +40,24 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 5 / 23청크 · 처리(원행) 53 / 2395건 · download_queue **49항목** · UNRESOLVED 1
+**집계:** 완료 6 / 23청크 · 처리(원행) 88 / 2395건 · download_queue **84항목** · UNRESOLVED 1
 
 ## 다음 액션
-→ **F-01 (Jephthah 10:6-12:7, 35건)** 정제. (`40_검증방법론.md` 절차 준수)
-- 정제 정본: `worklist/<청크>.csv` (18컬럼) · 식별불가분: `worklist/UNRESOLVED.csv`
-- 다운로드 목록: `worklist/download_queue.csv` append → **`python3 build_dashboard.py` 실행**하면 대시보드 자동 재생성
-- 대시보드 수기편집 불필요 (CSV가 정본, HTML은 빌드 산출물)
+→ **E-01 (Gideon·Abimelech 6-9, 61건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 가능)
+- download_queue.csv 컬럼(17): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,**cited_by**,status,notes
+- 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
 
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-14 · 세션 6 (F-01 Sonnet 위임 + 인프라)
+- **F-01 (Jephthah, 35건) DONE** — **Sonnet 서브에이전트** 위임(토큰 최적화), 메인 검토. → `worklist/F-01.csv`
+- 저자정정 다수(bib+웹 검증): Boecktr→Böhler, Dtn→Groß(자기인용), Ewald→Exum, Lohfink→MacDonald, 연도정정 2건. 등급 A19/B13/C3, UNRESOLVED 0.
+- ★**데이터 정합성 버그 수정**: download_queue 헤더에 `cited_by` 누락 → DictReader 밀림으로 대시보드 notes 유실되던 문제. 헤더 17컬럼으로 정정 + G-01-022 title 콤마 escape. 재빌드 후 warn 24·info 46 복구.
+- **인프라**: git init + 첫 커밋(로컬). `build_dashboard.py`가 `index.html`(Pages 진입점)도 생성. README 작성.
+- **결정 반영**: Sonnet 전환 / GitHub Pages+Sheets 병행 / 클라우드 이전(GitHub). 원본 서지는 repo 제외(공유폴더 유지).
+- 다음: E-01 (Gideon·Abimelech, 61건)
 
 ### 2026-07-13 · 세션 5 (G-01 + 대시보드 자동빌드)
 - **G-01 (Micah·Danites, 24행) DONE** → `worklist/G-01.csv` (전건 RESOLVED)
