@@ -21,7 +21,7 @@ updated: 2026-07-13
 | 4 | H-01 | Gibeah·Concubine | 17 | DONE | 2026-07-13 | worklist/H-01.csv |
 | 5 | G-01 | Micah·Danites | 24 | DONE | 2026-07-13 | worklist/G-01.csv |
 | 6 | F-01 | Jephthah | 35 | DONE | 2026-07-14 | worklist/F-01.csv |
-| 7 | E-01 | Gideon·Abimelech | 61 | NEW | | |
+| 7 | E-01 | Gideon·Abimelech | 61 | DONE | 2026-07-14 | worklist/E-01.csv |
 | 8 | D-01 | Deborah·Jael·Barak | 62 | NEW | | |
 | 9 | C-01 | Samson | 133 | NEW | | |
 | 10 | B-01 | Book·Composition | ~110 | NEW | | |
@@ -40,16 +40,25 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 6 / 23청크 · 처리(원행) 88 / 2395건 · download_queue **84항목** · UNRESOLVED 1
+**집계:** 완료 7 / 23청크 · 처리(원행) 149 / 2395건 · download_queue **139항목** · UNRESOLVED 1
 
 ## 다음 액션
-→ **E-01 (Gideon·Abimelech 6-9, 61건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 가능)
-- download_queue.csv 컬럼(17): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,**cited_by**,status,notes
+→ **D-01 (Deborah·Jael·Barak 4-5, 62건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 권장)
+- download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
 - 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
+- GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (private). 매 배치 후 커밋+push.
 
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-14 · 세션 7 (E-01 + GitHub 연결)
+- **E-01 (Gideon·Abimelech, 61행) DONE** — Sonnet 백그라운드 위임. 61→**55 고유**(병합 6건: OCR저자분기+정렬밀림 혼합).
+- ★고위험 저자정정 1건 메인세션 재검증: `Vincent`→**Mžik, Hans von**(WZKM 29, 1915) — Google Books+JSTOR 교차확인, B→A 승격.
+- 등급 A38/B13/C4, UNRESOLVED 0.
+- **GitHub 연결 완료**: origin=https://github.com/jtthw64-create/judges-report (사용자가 Codespace로 저장소 생성). 로컬 repo와 원격 초기README를 `--allow-unrelated-histories`로 병합 후 push.
+- 총 139항목 (7/23 청크). 대시보드 자동빌드 정상.
+- 다음: D-01 (Deborah·Jael·Barak, 62건)
 
 ### 2026-07-14 · 세션 6 (F-01 Sonnet 위임 + 인프라)
 - **F-01 (Jephthah, 35건) DONE** — **Sonnet 서브에이전트** 위임(토큰 최적화), 메인 검토. → `worklist/F-01.csv`
