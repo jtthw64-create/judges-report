@@ -1,0 +1,101 @@
+---
+title: 진행 상태 추적기 (세션마다 갱신)
+type: tracker
+updated: 2026-07-13
+---
+
+# 20 · PROGRESS TRACKER
+
+새 세션은 여기서 **다음 배치/청크**를 확인하고, 작업 후 **세션 로그를 append**한다.
+
+## 상태 코드
+`NEW` 미착수 · `IN_PROGRESS` 진행중 · `DONE` 정제+식별+중복재확인 완료 ·
+`PARTIAL` 일부만 · (항목 status는 청크 CSV 내부에 기록)
+
+## 배치·청크 현황 (진행 순서 = 가벼운 것부터)
+| 진행# | 청크 | 카테고리 | 건수 | 상태 | 완료일 | 산출물 |
+|---|---|---|---|---|---|---|
+| 1 | K-01 | Tola·Jair | 1 | DONE | 2026-07-13 | worklist/K-01.csv |
+| 2 | J-01 | Shamgar | 5 | DONE | 2026-07-13 | worklist/J-01.csv |
+| 3 | I-01 | Ehud | 6 | DONE | 2026-07-13 | worklist/I-01.csv |
+| 4 | H-01 | Gibeah·Concubine | 17 | DONE | 2026-07-13 | worklist/H-01.csv |
+| 5 | G-01 | Micah·Danites | 24 | DONE | 2026-07-13 | worklist/G-01.csv |
+| 6 | F-01 | Jephthah | 35 | NEW | | |
+| 7 | E-01 | Gideon·Abimelech | 61 | NEW | | |
+| 8 | D-01 | Deborah·Jael·Barak | 62 | NEW | | |
+| 9 | C-01 | Samson | 133 | NEW | | |
+| 10 | B-01 | Book·Composition | ~110 | NEW | | |
+| 10 | B-02 | Book·Composition | ~110 | NEW | | |
+| 10 | B-03 | Book·Composition | ~102 | NEW | | |
+| 11 | A-01 | General·ANE | ~150 | NEW | | |
+| 11 | A-02 | General·ANE | ~150 | NEW | | |
+| 11 | A-03 | General·ANE | ~150 | NEW | | |
+| 11 | A-04 | General·ANE | ~150 | NEW | | |
+| 11 | A-05 | General·ANE | ~150 | NEW | | |
+| 11 | A-06 | General·ANE | ~150 | NEW | | |
+| 11 | A-07 | General·ANE | ~150 | NEW | | |
+| 11 | A-08 | General·ANE | ~150 | NEW | | |
+| 11 | A-09 | General·ANE | ~150 | NEW | | |
+| 11 | A-10 | General·ANE | ~150 | NEW | | |
+| 11 | A-11 | General·ANE | ~150 | NEW | | |
+| 11 | A-12 | General·ANE | ~79 | NEW | | |
+
+**집계:** 완료 5 / 23청크 · 처리(원행) 53 / 2395건 · download_queue **49항목** · UNRESOLVED 1
+
+## 다음 액션
+→ **F-01 (Jephthah 10:6-12:7, 35건)** 정제. (`40_검증방법론.md` 절차 준수)
+- 정제 정본: `worklist/<청크>.csv` (18컬럼) · 식별불가분: `worklist/UNRESOLVED.csv`
+- 다운로드 목록: `worklist/download_queue.csv` append → **`python3 build_dashboard.py` 실행**하면 대시보드 자동 재생성
+- 대시보드 수기편집 불필요 (CSV가 정본, HTML은 빌드 산출물)
+
+---
+
+## 세션 로그 (최신이 위로 append)
+
+### 2026-07-13 · 세션 5 (G-01 + 대시보드 자동빌드)
+- **G-01 (Micah·Danites, 24행) DONE** → `worklist/G-01.csv` (전건 RESOLVED)
+- 24행 → **22 고유** (중복병합 2쌍: Faraone/Faraont, Na'aman/Na'oman)
+- ★공저자 정정: `Cox` → **Cox & Ackerman**(bib_sasson). 웹으로 5건 A등급 승격(Amit VT40·Faraone JNES64 DOI·Malamat Biblica51·Na'aman VT55·Suriano JNES66 DOI).
+- **자동화:** `build_dashboard.py` 도입 — `download_queue.csv` → `download_dashboard.html` 자동생성. warn/info·정렬·통계 자동. 이후 수기편집 폐지.
+- 다음: F-01 (Jephthah, 35건)
+
+### 2026-07-13 · 세션 4 (방법론 확정 + H-01)
+- confidence(A/B/C) 소급: `download_queue.csv`, 대시보드 반영. `40_검증방법론.md` 박제.
+- **H-01 (Gibeah, 17행) DONE** → `worklist/H-01.csv` (전건 RESOLVED)
+- **bib 원본 우선 대조** 첫 적용 — 매우 효과적. 잘린 제목 다수 복원(Krisel·Owens·Ziolkowski·Revell 등).
+- ★**저자 오기 적발**: `Maier 1971`→실제 **Malamat**(WHJP III Judges) — bib_sasson 893행 + 웹 확정.
+- 서지 완성: Edenburg(TAU diss 2003), Miller(VT 25), Schunck(BZAW 86 DOI), Na'aman(ZAW 121).
+- 등급: A 4건(Miller·Schunck·Malamat + I-01 Knauf 계열), 대부분 B, C 3건(Kedar-Kopfstein ThWAT 표제어미상·Sinclair AASOR·).
+- 관찰: **Groß 인용분은 bib 원본(bib_gross 부재)이 약해 웹 의존↑** → C·미확정 비율 높음.
+- 다음: G-01 (Micah·Danites, 24건)
+
+### 2026-07-13 · 세션 3 (I-01 + 산출물 형태 확정)
+- **I-01 (Ehud, 6행) DONE** → `worklist/I-01.csv`
+- 5건 RESOLVED + **1건 UNRESOLVED**(OCR 병합, `worklist/UNRESOLVED.csv`)
+- ★**저자 오기 2건 적발**: `Hurowitz 2009`→실제 **Sasson**(FS Oded), `Smith 1942`→실제 **Soggin 1989**(VT 39). + Knauf 쪽수 `254+`→`25-44` 정정.
+- 교훈: xlsx **저자·연도 필드 자체가 신뢰 불가**한 사례 다수 → 성씨+연도 매칭의 근본 취약. 웹 대조 필수 확인.
+- **산출물 형태 확정**: `download_queue.csv`(15컬럼, access_link·xlsx_ref 포함) + `download_dashboard.html`(클릭 접근링크·원본엑셀 좌표·받음 체크 localStorage).
+- 다음: H-01 (Gibeah, 17건)
+
+### 2026-07-13 · 세션 2 (J-01)
+- **J-01 (Shamgar, 5행) DONE** → `worklist/J-01.csv` · download_queue 편입
+- 5원행 → **4 고유항목** (Fensham·Mazar·Scherer·van Selms)
+- ★**중복병합 발견**: `Seims 1964`(Groß) + `Selms 1964`(Sasson) = 동일 논문 van Selms "Judge Shamgar" VT 14. OCR 저자분기로 xlsx가 2행으로 분리 → 성씨+연도 매칭이 못 잡음. **전체 2395에 유사 OCR 중복 다수 존재 추정** → 후속 배치에서 병합 주의.
+- ★**잘린 제목 복원**: Scherer 원행 `...ursprünglichen Positio`(잘림) → 웹으로 완전제목+ZAW 114 (2002) 106-109 복원.
+- DOI 확보: Mazar `10.1179/peq.1934.66.4.192`.
+- 바운더리 보강: **PEQ(Palestine Exploration Quarterly)를 OT-검색바운더리에 표적으로 추가**(52종). Mazar 항목 boundary off-list→표적 소급 정정.
+- 다음: I-01 (Ehud, 6건)
+
+### 2026-07-13 · 세션 1 (K-01 파일럿)
+- **K-01 (Tola·Jair, 1건) DONE** → `worklist/K-01.csv`
+- 확장 CSV 포맷 확정: 정제(17컬럼) = 서지 정규화 + boundary 태깅 + id_type/identifier + status + notes
+- 처리 내역: Knauf 1995 "Jair" — OCR교정(`NBL ll`→`NBL II`), 실재 확인(Knauf 실존·NBL 실재), status=RESOLVED, boundary=off-list(사전, 보류)
+- 관찰: 사전 표제어는 DOI 없음 → ISBN/전집 단위 식별. off-list 처리 규칙 검증됨.
+- 다음: J-01 (Shamgar, 5건)
+
+### 2026-07-13 · 세션 0 (셋업)
+- 데이터 검증 완료 (`2026-07-13_missing검증_및_수집워크플로우.md`)
+- 검색 바운더리 확보 (`OT-검색바운더리.md`)
+- 진행 순서·배치 계획 수립 → **가벼운 것부터, 사사기 핵심 우선**으로 확정
+- 인계 문서 세트 생성 (`00_START_HERE.md`, 본 트래커)
+- **정제 미착수.** 다음 세션 시작점 = K-01
