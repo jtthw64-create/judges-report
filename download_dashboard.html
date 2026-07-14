@@ -149,6 +149,28 @@ function ackProf(id){
   const p=prof[id]||{choice:null,comment:"",ack:false};
   p.ack=!p.ack;prof[id]=p;save();render();
 }
+async function loadFromBackend(){
+  if(!SHEETS_ENDPOINT) return;
+  try{
+    const res=await fetch(SHEETS_ENDPOINT);
+    const data=await res.json();
+    if(!data.ok||!data.rows) return;
+    data.rows.forEach(r=>{
+      const kind=r.kind,id=r.id;
+      if(!kind||!id) return;
+      if(kind==="got"){ got[id]=(String(r.field1)==="true"); }
+      else if(kind==="priority_change"){
+        if(r.field2==="__revert_to_original__") delete bdOverride[id]; else bdOverride[id]=r.field2;
+      }
+      else if(kind==="reclass"){ reclass[id]={open:false,comment:r.field1,status:r.field2,ts:r.ts}; }
+      else if(kind==="prof"){
+        const prevAck=(prof[id]&&prof[id].ack)||false;
+        prof[id]={choice:r.field1||null,comment:r.field2||"",ack:prevAck,ts:r.ts};
+      }
+    });
+    save();render();
+  }catch(err){ /* 서버 미도달 시 로컬 상태 유지 */ }
+}
 
 function render(){
   const q=(document.getElementById("q").value||"").toLowerCase();
@@ -219,4 +241,6 @@ function render(){
   });
 }
 render();
+loadFromBackend();
+if(SHEETS_ENDPOINT) setInterval(loadFromBackend,20000);
 </script></body></html>
