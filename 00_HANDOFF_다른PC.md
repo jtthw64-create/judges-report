@@ -35,11 +35,15 @@ updated: 2026-07-14
 - **모델:** 대량 정제는 **Sonnet 5**(서브에이전트 위임)로 전환 완료. Opus는 설계·의심항목 재검증만.
 - **GitHub:** `https://github.com/jtthw64-create/judges-report` 연결·**push 완료**(2026-07-14). SSH 인증 등록됨(`~/.ssh/id_ed25519.pub`, 새 PC는 별도 키 등록 필요 — 방법 B: Terminal.app에서 `git push` 시 브라우저 인증 유도, 또는 새 PC의 공개키를 GitHub Settings→SSH keys에 추가).
   - remote는 SSH(`git@github.com:...`)로 설정됨. HTTPS는 이 환경(비대화형 셸)에서 인증 불가했음.
-- **배포(대시보드 공유):** 아직 미착수. 결정된 방향 = GitHub Pages(뷰) + Google Sheets(협업·코멘트) 병행. Pages는 push 후 repo Settings에서 Source 설정 필요.
+- **배포(대시보드 공유):** GitHub Pages 활성화 완료(2026-07-14) — **https://jtthw64-create.github.io/judges-report/**. Google Sheets 병행은 아직 미착수.
 - **다음 배치:** D-01 (Deborah·Jael·Barak 4-5, 62건).
+- **일일 자동 정제 스케줄** 등록됨(2026-07-14): `judges-report-daily-refinement`, 매일 14:00 KST 사용자에게 승인 여부 확인 후 청크 최대 3개 정제. 큐: `worklist/refinement_queue.md`, 로그: `50_정제_이벤트로그.md`.
+
+## 공개 범위 정책 (2026-07-14 확정)
+- **repo는 public.** `judges report/` 폴더(가공 산출물: 계획·CSV·대시보드·방법론 문서)는 공개 가능 — 실제로 이미 public repo로 운영 중.
+- **원본 자료는 GitHub에 절대 업로드하지 않는다.** `5 Book 3 Judges Resources/`(원본 서지·PDF·xlsx)는 애초에 이 git 저장소 추적 대상이 아니며, Google Drive에만 존재(읽기전용). 앞으로도 원본 파일을 `judges report/` 안으로 복사해 커밋하는 일이 없도록 주의.
 
 ## 주의사항 (누적)
 - 대상 폴더 `5 Book 3 Judges Resources/`는 항상 읽기 전용.
 - `download_queue.csv` 컬럼 순서 고정(17개, `40_검증방법론.md`·`20_PROGRESS_TRACKER.md` 참고) — 컬럼 어긋나면 대시보드 데이터 유실(과거 1회 발생·수정됨).
 - OCR 저자분기 중복, 저자 정렬밀림 오기가 배치마다 나옴 → bib 원본 우선 대조 원칙 유지.
-- GitHub push·외부 공개 전 서지 목록이 홍교수님 자료임을 감안(현재 private repo로 처리 중).
