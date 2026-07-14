@@ -202,7 +202,7 @@ async function loadFromBackend(){
       else if(kind==="priority_change"){
         if(r.field2==="__revert_to_original__") delete bdOverride[id]; else bdOverride[id]=r.field2;
       }
-      else if(kind==="reclass"){ reclass[id]={open:false,comment:r.field1,status:r.field2,ts:r.ts}; }
+      else if(kind==="reclass"){ reclass[id]={open:false,comment:r.field1,status:r.field2,result:r.field3||"",ts:r.ts}; }
       else if(kind==="prof"){
         const prevAck=(prof[id]&&prof[id].ack)||false;
         prof[id]={choice:r.field1||null,comment:r.field2||"",ack:prevAck,ts:r.ts};

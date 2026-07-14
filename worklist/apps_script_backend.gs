@@ -33,7 +33,7 @@ function doPost(e) {
   } else if (kind === "priority_change") {
     f1 = data.from || ""; f2 = data.to || ""; f3 = data.reviewed ? "reviewed" : "pending";
   } else if (kind === "reclass") {
-    f1 = data.comment || ""; f2 = data.status || "";
+    f1 = data.comment || ""; f2 = data.status || ""; f3 = data.result || "";
   } else if (kind === "prof") {
     f1 = data.choice || ""; f2 = data.comment || "";
   }
