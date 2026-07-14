@@ -16,6 +16,7 @@
   .stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--sub)}
   .stat.click{cursor:pointer}.stat.click:hover{border-color:var(--accent)}
   .stat.alert{border-color:var(--high)}.stat.alert b{color:var(--high)}
+  .stat.active{border-color:var(--accent);border-width:2px}
   .cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
   .cat{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
   .cat b{margin-right:5px}
@@ -188,6 +189,8 @@ function render(){
     if(filter.type==="category"&&d.cat!==filter.value)return;
     if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return;
     if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return;
+    if(filter.type==="got"&&!got[d.id])return;
+    if(filter.type==="conf"&&d.conf!==filter.value)return;
     if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return;
     shown++;const tr=document.createElement("tr");if(got[d.id])tr.className="got";
     const overridden=bdOverride[d.id]!==undefined;
@@ -219,15 +222,23 @@ function render(){
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;
   const reclassPending=Object.keys(reclass).filter(id=>reclass[id].status==="pending").length;
   const profUnread=Object.keys(prof).filter(id=>{const p=prof[id];return (p.comment||p.choice)&&!p.ack;}).length;
-  document.getElementById("stats").innerHTML=
-    `<div class="stat"><b>${total}</b><span>총 자료</span></div>
-     <div class="stat"><b>${done}</b><span>받음 ✔</span></div>
-     <div class="stat"><b>${total-done}</b><span>미수령</span></div>
-     <div class="stat"><b>${DATA.filter(d=>effBd(d)==="통독").length}</b><span>Major</span></div>
-     <div class="stat"><b>${DATA.filter(d=>d.conf==="C").length}</b><span>C(확인요)</span></div>
-     <div class="stat click ${reclassPending?'alert':''}" onclick="setF({type:'reclass'})"><b>${reclassPending}</b><span>재검토 대기</span></div>
-     <div class="stat click ${profUnread?'alert':''}" onclick="setF({type:'prof'})"><b>${profUnread}</b><span>교수님 미확인</span></div>
-     <div class="stat"><b>${shown}</b><span>표시중</span></div>`;
+  const statDefs=[
+    {type:"all",label:"총 자료",n:total},
+    {type:"got",label:"받음 ✔",n:done},
+    {type:"todo",label:"미수령",n:total-done},
+    {type:"bd",value:"통독",label:"Major",n:DATA.filter(d=>effBd(d)==="통독").length},
+    {type:"conf",value:"C",label:"C(확인요)",n:DATA.filter(d=>d.conf==="C").length},
+    {type:"reclass",label:"재검토 대기",n:reclassPending,alert:!!reclassPending},
+    {type:"prof",label:"교수님 미확인",n:profUnread,alert:!!profUnread},
+  ];
+  document.getElementById("stats").innerHTML=statDefs.map((s,i)=>{
+    const isActive=filter.type===s.type&&(s.value===undefined||filter.value===s.value);
+    return `<div class="stat click ${s.alert?'alert':''} ${isActive?'active':''}" data-si="${i}"><b>${s.n}</b><span>${s.label}</span></div>`;
+  }).join("") + `<div class="stat"><b>${shown}</b><span>표시중</span></div>`;
+  [...document.getElementById("stats").children].slice(0,statDefs.length).forEach((el,i)=>{
+    const s=statDefs[i];
+    el.onclick=()=>setF(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
+  });
 
   const catCounts={};
   DATA.forEach(d=>{if(d.cat)catCounts[d.cat]=(catCounts[d.cat]||0)+1;});
