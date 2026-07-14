@@ -9,7 +9,7 @@ OUT = os.path.join(HERE, "download_dashboard.html")
 
 # Apps Script Web App 배포 후 이 URL만 채우면 재검토/교수님코멘트/우선순위토글이 서버(Google Sheets)에 저장됨.
 # 비어있으면 localStorage에만 저장(기기 간 동기화 안 됨).
-SHEETS_ENDPOINT = ""
+SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec"
 
 WARN_KW = ["정정", "난이도", "미상", "확인요"]
 
