@@ -114,6 +114,7 @@ TEMPLATE = r"""<!doctype html>
     .bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
     .bar input{grid-column:1/-1;width:100%;min-width:0}
     .bar button{padding:7px 3px;font-size:11px}
+    .bar .refresh{grid-column:1/-1}
     .tablewrap{overflow:visible;background:transparent;border:0;border-radius:0}
     table,tbody{display:block;width:100%}
     thead{display:none}
@@ -147,6 +148,7 @@ TEMPLATE = r"""<!doctype html>
     <button id="fMajor" onclick="setF({type:'bd',value:'통독'})">Major</button>
     <button id="fSecondary" onclick="setF({type:'bd',value:'표적'})">Secondary</button>
     <button id="fTodo" onclick="setF({type:'todo'})">미수령만</button>
+    <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
     <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>교수님 코멘트</th>
