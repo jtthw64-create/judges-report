@@ -4,7 +4,7 @@ type: work-order
 from: Claude(커맨더 세션)
 to: Codex
 created: 2026-07-16
-status: OPEN
+status: DONE
 ---
 
 # 70 · Codex 작업 지시서
@@ -67,3 +67,19 @@ status: OPEN
 ## 수행 보고
 > Codex가 완료 후 아래에 append (담당·일시·변경파일·검증결과·특이사항)
 
+- 담당: Codex
+- 일시: 2026-07-16 (KST)
+- 변경파일: `build_dashboard.py`, `download_dashboard.html`, `index.html`, `70_Codex_UI_요청.md`
+- 검증결과: `python3 build_dashboard.py` 재생성 완료(139행). 생성 HTML의 JavaScript 문법 검사 통과. `status=HELD_ALREADY` 8건과 원본 경로 8건이 DATA에 포함되고, 확보완료 배지·dim 행 스타일·타일 필터·경로 대체 렌더링이 생성물에 반영됨을 확인. 초기 `받음` 0건 기준 미수령은 기존 139건에서 확보완료 8건을 제외한 131건으로 보정. 기존 필터·재검토·교수님 코멘트·백엔드 폴링 코드 보존 및 JS 파싱 통과.
+- CSV 확인: `worklist/download_queue.csv`는 Git HEAD 대비 diff 0. 헤더 순서와 139개 데이터 행 전체가 17열임을 확인.
+- 특이사항: notes 마지막의 `[확보완료: ...]` 패턴을 비탐욕 정규식으로 파싱하되, 패턴이 없는 비정상 `HELD_ALREADY` 행은 `경로 확인 필요`로 보수적 표시. 현재 실행 샌드박스가 로컬 포트 바인딩(`PermissionError: Operation not permitted`)과 in-app Browser 제공을 차단해 HTTP 실브라우저 클릭 검증은 수행할 수 없었음. 대신 생성 HTML 구조·DATA 건수·필터 조건·JS 문법을 정적 검증함. 또한 `.git/index.lock` 생성이 샌드박스 정책으로 차단되어(`Operation not permitted`) 지정 파일의 `git add`·commit·push는 수행하지 못함.
+
+### 커맨더 검증 (2026-07-16, Claude)
+Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증함:
+- 확보완료 타일 8건 표시, 클릭 시 정확히 8건 필터링 확인.
+- `tr.held` 행 8개, `.held-badge` "확보완료" 배지 표시 확인.
+- 확보완료 행은 "열기" 링크 대신 원본 경로 텍스트 표시 확인 (예: `./2 Micha Danites/Nuri added/Amit-HiddenPolemicConquest-1990.pdf`).
+- 미수령 계산식 검증: `총자료 - 확보완료 - (확보완료 아닌 받음)` 정상 동작(백엔드 Sheets에 남아있던 기존 `받음` 이벤트와 겹쳐도 정합성 유지됨을 확인).
+- `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
+- Codex가 커밋하지 못한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, 본 문서)을 커맨더가 대신 커밋·push함.
+- **결론: WO-001 전 항목 검증 통과.**

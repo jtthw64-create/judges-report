@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # download_queue.csv -> download_dashboard.html 자동 생성
 # 사용: (judges report/ 에서) python3 build_dashboard.py
-import csv, json, os
+import csv, json, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(HERE, "worklist", "download_queue.csv")
@@ -18,6 +18,9 @@ with open(CSV, encoding="utf-8") as f:
     for r in csv.DictReader(f):
         conf = (r.get("confidence") or "").strip()
         notes = (r.get("notes") or "").strip()
+        status = (r.get("status") or "").strip()
+        held_match = re.search(r"\[확보완료:\s*(.*?)\]\s*$", notes)
+        held_path = held_match.group(1).strip() if held_match else ""
         warn = info = ""
         if any(k in notes for k in WARN_KW) or conf == "C":
             warn = notes or ("원문 확인 권장" if conf == "C" else "")
@@ -30,7 +33,8 @@ with open(CSV, encoding="utf-8") as f:
         rows.append({
             "id": r["id"], "pri": r["priority"], "bd": r["boundary"], "cat": r.get("category") or "",
             "conf": conf, "au": r["author"], "yr": r["year"], "ti": r["title"], "js": js,
-            "link": r["access_link"], "ref": r["xlsx_ref"], "warn": warn, "info": info,
+            "link": r["access_link"], "ref": r["xlsx_ref"], "status": status,
+            "heldPath": held_path, "warn": warn, "info": info,
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
@@ -72,6 +76,10 @@ TEMPLATE = r"""<!doctype html>
   th:nth-child(1){width:4%}th:nth-child(2){width:8%}th:nth-child(3){width:23%}th:nth-child(4){width:14%}
   th:nth-child(5){width:6%}th:nth-child(6){width:9%}th:nth-child(7){width:15%}th:nth-child(8){width:21%}
   tr.got{background:var(--got)}tr.got td.title{color:var(--gotink)}
+  tr.held{background:color-mix(in srgb,var(--card) 82%,var(--line));color:var(--sub)}
+  tr.held td{opacity:.72}tr.held .held-badge,tr.held .held-path{opacity:1}
+  .held-badge{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--gotink);border-radius:10px;color:var(--gotink);font-size:10px;font-weight:700;white-space:nowrap;vertical-align:1px}
+  .held-path{font-size:10px;line-height:1.35;color:var(--sub);font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
   .pri{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;color:#fff;cursor:pointer;border:none}
   .pri.high{background:var(--high)}.pri.mid{background:var(--mid)}.pri.low{background:var(--low)}
   .pri-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -120,6 +128,7 @@ TEMPLATE = r"""<!doctype html>
     thead{display:none}
     tr{display:block;margin-bottom:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
     tr.got{background:var(--got)}
+    tr.held{background:color-mix(in srgb,var(--card) 82%,var(--line))}
     td{display:grid;grid-template-columns:82px minmax(0,1fr);gap:8px;width:100%;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px}
     td:last-child{border-bottom:0}
     td::before{font-size:10px;font-weight:700;color:var(--sub);line-height:1.4;padding-top:2px}
@@ -270,22 +279,25 @@ function render(){
   DATA.forEach(d=>{
     const bd=effBd(d);
     if(filter.type==="bd"&&bd!==filter.value)return;
-    if(filter.type==="todo"&&got[d.id])return;
+    if(filter.type==="todo"&&(got[d.id]||d.status==="HELD_ALREADY"))return;
+    if(filter.type==="held"&&d.status!=="HELD_ALREADY")return;
     if(filter.type==="category"&&d.cat!==filter.value)return;
     if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return;
     if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return;
     if(filter.type==="got"&&!got[d.id])return;
     if(filter.type==="conf"&&d.conf!==filter.value)return;
     if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return;
-    shown++;const tr=document.createElement("tr");if(got[d.id])tr.className="got";
+    shown++;const tr=document.createElement("tr");
+    if(got[d.id])tr.classList.add("got");
+    if(d.status==="HELD_ALREADY")tr.classList.add("held");
     const overridden=bdOverride[d.id]!==undefined;
     const rc=reclass[d.id]||{};
     const pf=prof[d.id]||{};
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span></div><div class="cite">${d.au} (${d.yr})</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}</div><div class="cite">${d.au} (${d.yr})</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="cite">${d.js}</td>
-      <td><a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a></td>
+      <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
       <td class="ref">${d.ref}</td>
       <td class="panel">
         <button class="mbtn ${rc.status==='pending'?'on-req':''}" onclick="toggleReclass('${d.id}')">${rc.status==='pending'?'대기중':(rc.status==='ai_reviewed'?'검토완료':'재검토 신청')}</button>
@@ -305,12 +317,15 @@ function render(){
   });
 
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;
+  const held=DATA.filter(d=>d.status==="HELD_ALREADY").length;
+  const todo=DATA.filter(d=>!got[d.id]&&d.status!=="HELD_ALREADY").length;
   const reclassPending=Object.keys(reclass).filter(id=>reclass[id].status==="pending").length;
   const profUnread=Object.keys(prof).filter(id=>{const p=prof[id];return (p.comment||p.choice)&&!p.ack;}).length;
   const statDefs=[
     {type:"all",label:"총 자료",n:total},
     {type:"got",label:"받음 ✔",n:done},
-    {type:"todo",label:"미수령",n:total-done},
+    {type:"todo",label:"미수령",n:todo},
+    {type:"held",label:"확보완료",n:held},
     {type:"bd",value:"통독",label:"Major",n:DATA.filter(d=>effBd(d)==="통독").length},
     {type:"conf",value:"C",label:"C(확인요)",n:DATA.filter(d=>d.conf==="C").length},
     {type:"reclass",label:"재검토 대기",n:reclassPending,alert:!!reclassPending},
