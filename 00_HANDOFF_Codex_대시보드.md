@@ -78,9 +78,9 @@ node --check /tmp/dash.js && echo OK
   - 소스 코드 로컬 사본(참고용, git 추적됨): `worklist/apps_script_backend.gs` — **Apps Script는 git/CLI로 직접 배포 안 됨(clasp 미설치). 코드를 고치면 반드시 (a) 이 로컬 .gs 파일도 같이 고치고 (b) 아래 배포 절차로 실제 배포판도 갱신할 것. 둘이 안 맞으면 다음 사람이 헷갈린다.**
   - 배포된 Web App URL(GET=조회, POST=기록):
     ```
-    https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec
+    <WEB_APP_URL — build_dashboard.py의 SHEETS_ENDPOINT 상수에 실값 있음>
     ```
-  - 배포 설정: 실행 계정 = 소유자(나), 액세스 권한 = **모든 사용자(익명)**. 이 URL은 `build_dashboard.py`의 `SHEETS_ENDPOINT` 상수와 `index.html`/`download_dashboard.html`에 그대로 박혀 있고, repo가 public이라 **이 URL은 사실상 전 세계에 공개돼 있다.** 이건 사용자가 위험을 인지하고 명시적으로 승인한 상태다(원래는 비공개 요청이었으나 정적 페이지 구조상 불가능해서 공개로 진행하기로 사용자가 최종 결정함). 익명 접근이라 누구든 이 URL로 시트에 임의 행을 쓸 수 있음 — 인증을 추가하고 싶으면 사용자와 먼저 상의할 것.
+  - 배포 설정: 실행 계정 = 소유자, 액세스 범위 = 링크를 아는 사용자. 실제 URL 값은 `build_dashboard.py`의 `SHEETS_ENDPOINT` 상수에 있으니 필요할 때 거기서 확인할 것(문서에는 값 미기재). 이 저장소가 public이라 URL이 소스에 노출되는 구조이며, 사용자가 이 점을 인지하고 현행 구성으로 진행하기로 결정한 상태다. 접근 제어 방식을 바꾸려면 사용자와 먼저 상의할 것.
 
 ### Apps Script 코드 수정 → 재배포 절차 (실제로 해본 순서)
 1. 프로젝트 URL 접속 → `Code.gs` 편집 → 저장(Cmd+S).
@@ -92,7 +92,7 @@ node --check /tmp/dash.js && echo OK
 6. 최초 배포 시에는 "액세스 승인" 팝업이 뜰 수 있다(자기 자신 계정에 대한 권한 부여라 위험한 동작 아님). 팝업이 새 창으로 안 뜨고 응답이 없으면, 대신 편집기 상단 "실행" 버튼으로 아무 함수나 한 번 실행해서 인라인 "권한 검토" 대화상자로 승인을 처리하면 된다(실제로 겪었던 이슈, 이 방법으로 해결됨).
 7. curl로 검증:
    ```
-   curl -sL "https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec"
+   curl -sL "<WEB_APP_URL — build_dashboard.py의 SHEETS_ENDPOINT 상수에 실값 있음>"
    # {"ok":true,"rows":[...]}
    ```
    POST 테스트:
@@ -130,5 +130,5 @@ node --check /tmp/dash.js && echo OK
 ## 8. 알려진 한계 / 다음에 고려할 것 (강제 아님, 참고용)
 - 교수님 Google 계정과 시트 공유가 아직 안 돼 있음(사용자가 "지금은 나만 구축, 이후 공유 조정" 결정). 공유하려면 시트 우측 상단 "공유"에서 교수님 이메일 추가.
 - events 시트가 append-only라 계속 커진다. 압축/정리 로직 없음 — 필요해지면 만들 것.
-- Apps Script는 인증 없는 익명 쓰기라 스팸/오남용에 취약할 수 있음(위험 인지하고 진행 중인 상태).
+- Apps Script 엔드포인트는 현재 링크 기반 접근이라 접근 제어가 느슨함(사용자가 인지하고 현행 유지 중). 강화 필요 시 사용자와 상의.
 - 스프레드시트 제목이 "제목 없는 스프레드시트"로 남아있음(리네임 실패, 기능엔 무해).

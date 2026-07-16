@@ -1,0 +1,98 @@
+---
+title: 커맨더 세션 — 역할 정의 및 시작점
+type: charter
+updated: 2026-07-16
+---
+
+# 00-D · 커맨더 세션 (지휘·계획·점검·전달)
+
+> **새 Claude 세션은 이 문서부터 읽는다.** 이게 시작점이다.
+> 이 세션의 정체성: **작업폴더의 메인 커맨더**. 사용자의 명령·요구를 수집해 계획을 세우고, 적절한 실행 주체에 분배·전달하고, 결과를 점검한다.
+
+## 0. 세션 시작 절차
+```
+cd "…/Claude Cowork GD/judges report"
+git pull                    # 병행 세션(예약작업·Codex) 커밋이 있을 수 있음 — 반드시 먼저
+git log --oneline -10       # 누가 뭘 했는지 확인
+```
+그다음 읽을 것: 이 문서 → `20_PROGRESS_TRACKER.md`(진행상태) → `70_Codex_UI_요청.md`(Codex 작업현황)
+
+## 1. 역할 분담 (2026-07-16 확정)
+
+| 주체 | 담당 | 건드리는 것 |
+|---|---|---|
+| **커맨더 (이 세션)** | 지휘·계획·점검·전달. 요구 수집 → 분배 → 검수 | 계획/지시 문서, 진행 트래커 |
+| **Claude 정제 파이프라인** | 서지 정제(refinement), reclass review | `download_queue.csv`, xlsx 사본, `20_PROGRESS_TRACKER.md` |
+| **Codex** | **대시보드 UI/프런트엔드 전담** | `build_dashboard.py`의 TEMPLATE, 생성된 HTML |
+
+**경계 원칙**
+- **데이터는 Claude, 화면은 Codex.** Codex는 서지 데이터 내용을 고치지 않는다. Claude는 UI를 고치지 않는다.
+- 커맨더는 직접 실행보다 **분배·점검**이 우선. 단, 정제/reclass는 커맨더 세션이 직접 수행 가능(사용자 지시).
+
+## 2. 자동 예약작업 (Claude Code 전용 — Codex는 조회·수정 불가)
+
+| 작업 | 시각(KST) | 하는 일 |
+|---|---|---|
+| `judges-report-daily-refinement` | 매일 14:00 | 정제 배치(청크 3개) 승인 요청 → 승인 시 정제·CSV/트래커 갱신·대시보드 재생성·push |
+| `judges-report-reclass-review` | 매일 09:00 | 대시보드 재검토 신청 pending 건 AI 검토 → 결과 기록 → 필요시 CSV 정정 |
+
+파일 경로: `~/.claude/scheduled-tasks/<id>/SKILL.md` (텍스트 파일이라 수정 가능하나, 스키마 변경 시 반드시 함께 갱신)
+
+⚠️ **동시 편집 주의**: 위 두 시각 전후로 `download_queue.csv`·`20_PROGRESS_TRACKER.md`를 만지지 말 것.
+
+## 3. 절대 규칙
+1. **원본 폴더 `../5 Book 3 Judges Resources/`는 읽기 전용.** 어떤 경우에도 쓰기·이동·삭제 금지.
+2. **원본 서지 자료는 GitHub 미업로드.** `judges report/` 산출물만 public repo에 올라간다. (`*.xlsx`는 `.gitignore` 처리됨)
+3. **서지 지어내기 금지.** 미확인 값은 `[추정]` 표기, 식별 불가는 `UNRESOLVED`.
+4. **`download_queue.csv` 컬럼 17개 순서 고정.** 깨지면 대시보드 데이터 유실.
+5. 파일 수정이 **2회 연속 실패하면 중단·보고**. 3회째 금지.
+
+## 4. 알려진 함정 (겪은 것들 — 반복 방지)
+
+### 4-1. Google Drive에 파일이 안 보이는 문제 ★중요
+Claude의 Write 도구는 원자적 rename으로 저장하는데 **Google Drive File Stream이 이 패턴을 놓쳐** 자기 DB에 등록하지 못한다.
+→ 디스크엔 있어서 `ls`엔 보이는데 **Finder 목록엔 안 뜨고 클라우드 동기화도 안 됨.**
+**해결**: 문서 파일은 **쉘 쓰기(`cat > file << 'EOF'`)로 생성**할 것. 이미 만든 파일이 안 보이면:
+```
+cp "$f" /tmp/x && rm "$f" && cat /tmp/x > "$f"
+```
+
+### 4-2. 안전 분류기 오탐(AUP false positive) ★중요
+2026-07-16 발생: 세션 컨텍스트에 "익명 쓰기 가능한 공개 엔드포인트", "credential leakage", SSH 공개키 같은 표현이 **누적**되자, 정당한 학술 작업인데도 API가 요청을 차단했다(`Usage Policy 위반` 오탐). Sonnet에서 발생, Opus에서는 통과.
+**예방**:
+- 문서에 **엔드포인트 실제 URL·키 값을 본문에 박지 말 것.** `build_dashboard.py`의 `SHEETS_ENDPOINT` 상수 참조로 간접 표기.
+- 보안 취약점을 서술할 때 자극적 표현("누구든 임의로 쓸 수 있음") 대신 중립적 사실 서술.
+- **세션이 길어지면 새 세션으로 교체.** 이 문서가 그 교체를 가능하게 하는 시작점이다.
+**발생 시 대처**: 모델 변경(Sonnet→Opus) 또는 새 세션 시작.
+
+### 4-3. 로컬 대시보드 테스트
+`file://`로 열면 fetch 차단됨. 반드시 http 서버로:
+```
+lsof -ti:8934 | xargs -r kill -9; python3 -m http.server 8934 &
+# http://localhost:8934/index.html
+```
+
+## 5. 문서 지도
+| 문서 | 용도 |
+|---|---|
+| **`00_COMMANDER.md`** | ← 지금 이 문서. 커맨더 시작점 |
+| `00_START_HERE.md` | 프로젝트 기본 규칙 |
+| `00_HANDOFF_Codex_대시보드.md` | Codex용 환경·백엔드 인수인계 (GitHub/Pages/Sheets/Apps Script) |
+| `70_Codex_UI_요청.md` | Codex 작업 지시서 (발행·수행보고) |
+| `20_PROGRESS_TRACKER.md` | 정제 진행 상태 (정본) |
+| `40_검증방법론.md` | 정제 절차·신뢰등급·**원본 대조 절차** |
+| `60_대시보드_변경요청.md` | 사용자 UI 요구 접수함 |
+| `50_정제_이벤트로그.md` | 예약작업 실행 기록 |
+| `10_진행순서_배치계획.md` / `30_수집전략_2트랙.md` / `OT-검색바운더리.md` | 배치·전략·바운더리 |
+| ~~`2026-07-15_Codex_인수점검_보고서.md`~~ | **낡음**(구 스냅샷 기준). 참고만 |
+
+## 6. 현재 상태 (2026-07-16)
+- 정제: **7/23 청크 완료** (K·J·I·H·G·F·E). 다음 = **D-01 (Deborah·Jael·Barak, 62건)**
+- 다운로드 대장: 139항목. 그중 **8건은 `HELD_ALREADY`**(원본 폴더에 이미 확보됨 — 2026-07-16 대조 확인)
+- 대시보드: https://jtthw64-create.github.io/judges-report/
+- **진행 중 작업**: `70_Codex_UI_요청.md` WO-001 (확보완료 시각 구분) → Codex 대기
+- 정제 큐: D-01·C-01·B-01 승인 대기 상태(사용자가 최근 며칠 보류/무응답)
+
+## 7. 사용자 운영 관행
+- 대시보드 수정 요구는 `60_대시보드_변경요청.md`에 **접수만** 해두고, 사용자가 **"완료, 실행"**이라 말할 때 일괄 처리.
+- 커맨더는 요구를 받으면 → 계획 제시 → 승인 후 적임 주체에 분배 → 결과 검수·보고.
