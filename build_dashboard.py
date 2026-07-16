@@ -73,8 +73,11 @@ TEMPLATE = r"""<!doctype html>
   table{border-collapse:collapse;width:100%;table-layout:fixed}
   th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
   th{font-size:11px;line-height:1.25;color:var(--sub);font-weight:600;position:sticky;top:0;background:var(--card)}
-  th:nth-child(1){width:4%}th:nth-child(2){width:8%}th:nth-child(3){width:23%}th:nth-child(4){width:14%}
-  th:nth-child(5){width:6%}th:nth-child(6){width:9%}th:nth-child(7){width:15%}th:nth-child(8){width:21%}
+  th:nth-child(1){width:4%}th:nth-child(2){width:8%}th:nth-child(3){width:14%}th:nth-child(4){width:10%}
+  th:nth-child(5){width:12%}th:nth-child(6){width:6%}th:nth-child(7){width:8%}th:nth-child(8){width:15%}th:nth-child(9){width:23%}
+  .author-sort{width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer}
+  .author-sort:hover,.author-sort:focus-visible{color:var(--accent)}
+  .author-cell{font-size:12px;font-weight:600}
   tr.got{background:var(--got)}tr.got td.title{color:var(--gotink)}
   tr.held{background:color-mix(in srgb,var(--card) 82%,var(--line));color:var(--sub)}
   tr.held td{opacity:.72}tr.held .held-badge,tr.held .held-path{opacity:1}
@@ -135,11 +138,12 @@ TEMPLATE = r"""<!doctype html>
     td:nth-child(1)::before{content:"받음"}
     td:nth-child(2)::before{content:"우선순위"}
     td:nth-child(3)::before{content:"자료"}
-    td:nth-child(4)::before{content:"저널·시리즈"}
-    td:nth-child(5)::before{content:"접근"}
-    td:nth-child(6)::before{content:"원본 위치"}
-    td:nth-child(7)::before{content:"재검토"}
-    td:nth-child(8)::before{content:"교수님 코멘트"}
+    td:nth-child(4)::before{content:"저자"}
+    td:nth-child(5)::before{content:"저널·시리즈"}
+    td:nth-child(6)::before{content:"접근"}
+    td:nth-child(7)::before{content:"원본 위치"}
+    td:nth-child(8)::before{content:"재검토"}
+    td:nth-child(9)::before{content:"교수님 코멘트"}
     .title{font-size:13px}.cite{font-size:11px}
     .panel textarea{height:52px;font-size:12px}
     .mbtn{font-size:10px;padding:5px 7px}
@@ -160,7 +164,7 @@ TEMPLATE = r"""<!doctype html>
     <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
-    <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>교수님 코멘트</th>
+    <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleAuthorSort()">저자 <span id="authorSortMark">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>교수님 코멘트</th>
   </tr></thead><tbody id="rows"></tbody></table></div>
   <footer>
     ✔ <b>받음</b> 체크와 재검토·코멘트·우선순위 변경은 이 브라우저에 자동 저장됩니다(localStorage)<span id="syncNote"></span>.<br>
@@ -185,6 +189,7 @@ let bdHistory=JSON.parse(localStorage.getItem(KEY_BD_HIST)||"[]");
 let reclass=JSON.parse(localStorage.getItem(KEY_RECLASS)||"{}");
 let prof=JSON.parse(localStorage.getItem(KEY_PROF)||"{}");
 let filter={type:"all"};
+let authorSort=null;
 document.getElementById("syncNote").textContent = SHEETS_ENDPOINT ? "" : " (⚠ 서버 미연결 — 이 기기에만 저장됨)";
 
 function syncToBackend(kind,payload){
@@ -199,6 +204,7 @@ function save(){
   localStorage.setItem(KEY_PROF,JSON.stringify(prof));
 }
 function setF(f){filter=f;render()}
+function toggleAuthorSort(){authorSort=authorSort==="asc"?"desc":"asc";render()}
 function toggle(id){got[id]=!got[id];save();syncToBackend("got",{id,got:got[id]});render()}
 function effBd(d){return bdOverride[d.id]||d.bd}
 function cycleBd(id,orig){
@@ -269,25 +275,36 @@ async function loadFromBackend(){
 
 function render(){
   const q=(document.getElementById("q").value||"").toLowerCase();
+  const authorHead=document.getElementById("authorHead");
+  document.getElementById("authorSortMark").textContent=authorSort==="asc"?"▲":authorSort==="desc"?"▼":"⇅";
+  authorHead.setAttribute("aria-sort",authorSort==="asc"?"ascending":authorSort==="desc"?"descending":"none");
   ["fAll","fMajor","fSecondary","fTodo"].forEach(x=>document.getElementById(x).classList.remove("active"));
   if(filter.type==="all")document.getElementById("fAll").classList.add("active");
   if(filter.type==="bd"&&filter.value==="통독")document.getElementById("fMajor").classList.add("active");
   if(filter.type==="bd"&&filter.value==="표적")document.getElementById("fSecondary").classList.add("active");
   if(filter.type==="todo")document.getElementById("fTodo").classList.add("active");
 
-  const rows=document.getElementById("rows");rows.innerHTML="";let shown=0;
-  DATA.forEach(d=>{
+  const rows=document.getElementById("rows");rows.innerHTML="";
+  const visible=DATA.filter(d=>{
     const bd=effBd(d);
-    if(filter.type==="bd"&&bd!==filter.value)return;
-    if(filter.type==="todo"&&(got[d.id]||d.status==="HELD_ALREADY"))return;
-    if(filter.type==="held"&&d.status!=="HELD_ALREADY")return;
-    if(filter.type==="category"&&d.cat!==filter.value)return;
-    if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return;
-    if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return;
-    if(filter.type==="got"&&!got[d.id])return;
-    if(filter.type==="conf"&&d.conf!==filter.value)return;
-    if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return;
-    shown++;const tr=document.createElement("tr");
+    if(filter.type==="bd"&&bd!==filter.value)return false;
+    if(filter.type==="todo"&&(got[d.id]||d.status==="HELD_ALREADY"))return false;
+    if(filter.type==="held"&&d.status!=="HELD_ALREADY")return false;
+    if(filter.type==="category"&&d.cat!==filter.value)return false;
+    if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
+    if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return false;
+    if(filter.type==="got"&&!got[d.id])return false;
+    if(filter.type==="conf"&&d.conf!==filter.value)return false;
+    if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(authorSort){
+    const direction=authorSort==="asc"?1:-1;
+    visible.sort((a,b)=>direction*a.au.localeCompare(b.au,undefined,{sensitivity:"base",numeric:true}));
+  }
+  visible.forEach(d=>{
+    const bd=effBd(d);
+    const tr=document.createElement("tr");
     if(got[d.id])tr.classList.add("got");
     if(d.status==="HELD_ALREADY")tr.classList.add("held");
     const overridden=bdOverride[d.id]!==undefined;
@@ -295,7 +312,8 @@ function render(){
     const pf=prof[d.id]||{};
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}</div><div class="cite">${d.au} (${d.yr})</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}</div><div class="cite">${d.yr}</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td class="author-cell">${d.au}</td>
       <td class="cite">${d.js}</td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
       <td class="ref">${d.ref}</td>
@@ -316,6 +334,7 @@ function render(){
     rows.appendChild(tr);
   });
 
+  const shown=visible.length;
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;
   const held=DATA.filter(d=>d.status==="HELD_ALREADY").length;
   const todo=DATA.filter(d=>!got[d.id]&&d.status!=="HELD_ALREADY").length;

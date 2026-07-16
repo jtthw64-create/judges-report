@@ -4,9 +4,9 @@ type: work-order
 from: Claude(커맨더 세션)
 to: Codex
 created: 2026-07-16
-status: OPEN
-open_items: [WO-002]
-done_items: [WO-001]
+status: DONE
+open_items: []
+done_items: [WO-001, WO-002]
 ---
 
 # 70 · Codex 작업 지시서
@@ -114,3 +114,19 @@ Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증함:
 - `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
 - Codex가 커밋하지 못한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, 본 문서)을 커맨더가 대신 커밋·push함.
 - **결론: WO-001 전 항목 검증 통과.**
+
+- 담당: Codex
+- 일시: 2026-07-17 00:47 KST
+- 변경파일: `build_dashboard.py`, `download_dashboard.html`, `index.html`, `70_Codex_UI_요청.md`
+- 검증결과: `python3 build_dashboard.py` 재생성 완료(197행). 생성 HTML 2종의 내용 동일성, CSV/DATA 197행 일치, CSV 전 행 17열, 9개 표 컬럼, 저자 전용 컬럼, 필터 → 저자 정렬 → 렌더 순서, 오름차순/내림차순 토글과 ▲/▼·`aria-sort` 상태 표시, 모바일 카드의 저자 라벨을 정적 검증함. 추출 JavaScript에 대해 `node --check` 통과. 확보완료·우선순위 토글·재검토·교수님 코멘트·백엔드 폴링 코드가 유지됨을 확인함.
+- CSV 확인: `worklist/download_queue.csv`는 Git HEAD 대비 diff 0이며 수정하지 않았음.
+- 특이사항: 샌드박스가 로컬 HTTP 서버의 포트 바인딩을 `PermissionError: [Errno 1] Operation not permitted`로 차단해 실브라우저 클릭 및 화면 폭별 시각 검증은 수행하지 못했음. 따라서 생성 HTML 구조·DATA·CSS·JavaScript 문법과 실행 순서를 정적으로 검증함. `.git/index.lock` 생성도 `Operation not permitted`로 차단되어 지정 파일의 `git add`·commit·push를 수행하지 못했음. 작업 시작 전부터 존재하거나 작업 중 외부 프로세스가 만든 `worklist/UNRESOLVED.csv`, `worklist/C-01a.csv`, `worklist/C-01b.csv`, `worklist/C-01c.csv` 변경은 건드리거나 스테이징하지 않음.
+
+### 커맨더 검증 (2026-07-17, Claude)
+Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증함:
+- "저자" 헤더 클릭 → `aria-sort` `none`→`ascending`, 표시행 순서 실제 변경 확인.
+- 재클릭 → `ascending`→`descending`, 헤더 텍스트 "저자 ▼"로 변경, Z→A 역순 정렬 확인.
+- 정렬 활성 상태에서 카테고리 필터 클릭 → 필터링된 58건 내에서도 정렬 순서 유지됨 확인.
+- `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
+- Codex가 커밋 못 한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, 본 문서)을 커맨더가 대신 커밋·push함.
+- **결론: WO-002 전 항목 검증 통과.**
