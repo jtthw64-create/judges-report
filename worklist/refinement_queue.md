@@ -19,7 +19,7 @@ updated: 2026-07-14
 
 | 순번 | 청크 | 카테고리 | 건수 | status | 완료일 |
 |---|---|---|---|---|---|
-| 8 | D-01 | Deborah·Jael·Barak | 62 | pending | |
+| 8 | D-01 | Deborah·Jael·Barak | 62 | done | 2026-07-17 |
 | 9 | C-01 | Samson | 133 | pending | |
 | 10 | B-01 | Book·Composition | ~110 | pending | |
 | 10 | B-02 | Book·Composition | ~110 | pending | |

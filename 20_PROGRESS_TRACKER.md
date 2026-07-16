@@ -22,7 +22,7 @@ updated: 2026-07-13
 | 5 | G-01 | Micah·Danites | 24 | DONE | 2026-07-13 | worklist/G-01.csv |
 | 6 | F-01 | Jephthah | 35 | DONE | 2026-07-14 | worklist/F-01.csv |
 | 7 | E-01 | Gideon·Abimelech | 61 | DONE | 2026-07-14 | worklist/E-01.csv |
-| 8 | D-01 | Deborah·Jael·Barak | 62 | NEW | | |
+| 8 | D-01 | Deborah·Jael·Barak | 62 | DONE | 2026-07-17 | worklist/D-01.csv |
 | 9 | C-01 | Samson | 133 | NEW | | |
 | 10 | B-01 | Book·Composition | ~110 | NEW | | |
 | 10 | B-02 | Book·Composition | ~110 | NEW | | |
@@ -40,17 +40,27 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 7 / 23청크 · 처리(원행) 149 / 2395건 · download_queue **139항목** · UNRESOLVED 1
+**집계:** 완료 8 / 23청크 · 처리(원행) 211 / 2395건 · download_queue **197항목**(HELD_ALREADY 11 포함) · UNRESOLVED 1
 
 ## 다음 액션
-→ **D-01 (Deborah·Jael·Barak 4-5, 62건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 권장)
+→ **C-01 (Samson, 133건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 권장 — 대형 배치이므로 분할 위임 고려)
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
 - 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
-- GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (private). 매 배치 후 커밋+push.
+- GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (public). 매 배치 후 커밋+push.
+- 신규 청크마다 `40_검증방법론.md` 8절(원본폴더 확보완료 대조) 재실행 필수.
 
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-17 · 세션 8 (D-01 + 커맨더 체계 + Codex MCP 연동)
+- **D-01 (Deborah·Jael·Barak, 62행) DONE** — Sonnet 서브에이전트 위임. 62→**58 고유**(병합 4쌍).
+- 등급 A44/B10/C4, UNRESOLVED 0. **HELD_ALREADY 3건**(Asen 1997·Globe 1974·Margalit 1995 — 원본폴더 "2 Deborah and Jael" 폴더에서 파일 실재 확인).
+- ★저자정정 다수(OCR): Artzy→Asen, Burke→Burnette-Bletsch, Latvus→Layton, Lnin→Levin, Marello→Margalit, McCarthy→McDaniel, Schorn→Schreiner, Shaw→Shea, Snyman→Soggin, Whiston→White(Crawford) 등.
+- 총 197항목 (8/23 청크). 대시보드 자동빌드 정상.
+- **체계 변화**: 커맨더 세션(`00_COMMANDER.md`) 수립 — 데이터=Claude(정제/reclass), 화면=Codex, 지휘=커맨더로 역할 분리. Codex 연동은 `mcp__codex-mcp__codex` MCP 직접호출로 전환(2026-07-17).
+- 확보완료(HELD_ALREADY) 시각 구분 UI를 Codex에 위임(WO-001) → 완료, 검증 후 push.
+- 다음: C-01 (Samson, 133건)
 
 ### 2026-07-14 · 세션 7 (E-01 + GitHub 연결)
 - **E-01 (Gideon·Abimelech, 61행) DONE** — Sonnet 백그라운드 위임. 61→**55 고유**(병합 6건: OCR저자분기+정렬밀림 혼합).
