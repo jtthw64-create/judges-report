@@ -23,7 +23,7 @@ updated: 2026-07-13
 | 6 | F-01 | Jephthah | 35 | DONE | 2026-07-14 | worklist/F-01.csv |
 | 7 | E-01 | Gideon·Abimelech | 61 | DONE | 2026-07-14 | worklist/E-01.csv |
 | 8 | D-01 | Deborah·Jael·Barak | 62 | DONE | 2026-07-17 | worklist/D-01.csv |
-| 9 | C-01 | Samson | 133 | NEW | | |
+| 9 | C-01 | Samson | 133 | DONE | 2026-07-17 | worklist/C-01.csv (a/b/c 3분할 병합) |
 | 10 | B-01 | Book·Composition | ~110 | NEW | | |
 | 10 | B-02 | Book·Composition | ~110 | NEW | | |
 | 10 | B-03 | Book·Composition | ~102 | NEW | | |
@@ -40,18 +40,29 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 8 / 23청크 · 처리(원행) 211 / 2395건 · download_queue **197항목**(HELD_ALREADY 11 포함) · UNRESOLVED 1
+**집계:** 완료 9 / 23청크 · 처리(원행) 344 / 2395건 · download_queue **320항목**(HELD_ALREADY 30 포함) · UNRESOLVED 8
 
 ## 다음 액션
-→ **C-01 (Samson, 133건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 권장 — 대형 배치이므로 분할 위임 고려)
+→ **B-01 (Book·Composition, ~110건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 — 대형 배치이므로 분할 위임 권장)
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
+- **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지 — C-01에서 일부 서브에이전트가 잘못 써서 사후 정정한 사례 있음). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
 - 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
 - GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (public). 매 배치 후 커밋+push.
-- 신규 청크마다 `40_검증방법론.md` 8절(원본폴더 확보완료 대조) 재실행 필수.
+- 신규 청크마다 `40_검증방법론.md` 8절(원본폴더 확보완료 대조) 재실행 필수. **`download_queue.csv` 전체 갱신 후 `python3 worklist/held_audit.py`로 재점검**(8-5절 원칙).
 
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-17 · 세션 9 (C-01 3분할 병렬 + 확보완료 재점검 11건 추가)
+- **C-01 (Samson, 133행) DONE** — 3분할(C-01a/b/c) 병렬 Sonnet 위임. 133→**123 확정 고유**(HELD_ALREADY 8, QUEUED 115) + **UNRESOLVED 7건**(bömer/Ebeling/Fakasiieiki/Gtu·Gese/Hennann/Lesley/Mazar 2023 — 게재지·소속 미확인).
+- 등급 A82/B36/C5.
+- ★데이터 정합성 정정: 일부 서브에이전트가 `status=RESOLVED`(관례 위반, 정정: `QUEUED`)와 UNRESOLVED 행 중복 기재(제거, UNRESOLVED.csv에만 유지) — 커맨더가 통합 시 발견·정정.
+- ★고위험 저자정정: Sasson, Jack M. 본인 자기인용 2건(C-01a "Chambon"→Sasson), van der Toorn 1건("Bachmann"→van der Toorn), Zakovitch("Younger"→Zakovitch) 등.
+- **확보완료 재점검(사용자 지적)**: `worklist/held_audit.py`(제목토큰겹침) 전체 재실행 → **기존 정제분(K~E)에서 11건 추가 발견**(HELD_ALREADY 절차 신설 이전 정제라 누락돼 있었음). 40_검증방법론.md 8-5절 기록.
+- 총 **320항목** (9/23 청크, HELD_ALREADY 30). 대시보드 자동빌드 정상.
+- Codex WO-002(저자 컬럼+정렬) 완료 — MCP 직접호출(`workspace-write` 샌드박스)로 트리거, 커맨더 실브라우저 검증 후 push.
+- 다음: B-01 (Book·Composition, ~110건)
 
 ### 2026-07-17 · 세션 8 (D-01 + 커맨더 체계 + Codex MCP 연동)
 - **D-01 (Deborah·Jael·Barak, 62행) DONE** — Sonnet 서브에이전트 위임. 62→**58 고유**(병합 4쌍).
