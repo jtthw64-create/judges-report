@@ -27,9 +27,9 @@ updated: 2026-07-13
 | 10 | B-01 | Book·Composition | ~110 | DONE | 2026-07-17 | worklist/B-01.csv (a/b/c 3분할 병합) |
 | 10 | B-02 | Book·Composition | ~110 | DONE | 2026-07-17 | worklist/B-02.csv (a/b/c 3분할 병합) |
 | 10 | B-03 | Book·Composition | ~102 | DONE | 2026-07-17 | worklist/B-03.csv (a/b/c 3분할 병합) |
-| 11 | A-01 | General·ANE | ~150 | NEW | | |
-| 11 | A-02 | General·ANE | ~150 | NEW | | |
-| 11 | A-03 | General·ANE | ~150 | NEW | | |
+| 11 | A-01 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-01.csv (a/b/c 3분할 병합) |
+| 11 | A-02 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-02.csv (a/b/c 3분할 병합) |
+| 11 | A-03 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-03.csv (a/b/c 3분할 병합) |
 | 11 | A-04 | General·ANE | ~150 | NEW | | |
 | 11 | A-05 | General·ANE | ~150 | NEW | | |
 | 11 | A-06 | General·ANE | ~150 | NEW | | |
@@ -40,10 +40,11 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 12 / 23청크 · 처리(원행) 666 / 2395건 · download_queue **620항목**(HELD_ALREADY 50 포함) · UNRESOLVED 12
+**집계:** 완료 15 / 23청크 · 처리(원행) 1116 / 2395건 · download_queue **1051항목**(HELD_ALREADY 53 포함) · UNRESOLVED 20
 
 ## 다음 액션
-→ **A-01 (General·ANE, ~150건)** 정제. 이후 A-02~A-12까지 동일 카테고리 대형 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 — 대형 배치이므로 3분할 병렬 위임 권장, B-01/B-02/B-03 각 3분할·9서브에이전트 병렬 방식이 잘 작동함)
+→ **A-04 (General·ANE, ~150건)** 정제. 이후 A-05~A-12까지 동일 카테고리 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
+- ★**서브에이전트 위임 시 원본 bib 경로를 반드시 명시할 것**: `5 Book 3 Judges Resources/judges-index/extracted/`(작업폴더 하위 아님). 2026-07-17 세션에서 경로를 잘못 안내해 A-01c 담당이 1단계(원본 대조)를 통째로 생략하고 외부 DB만으로 확정 → 재작업으로 A등급 29→44 상향, UNRESOLVED 1건 해결. 40_검증방법론.md 9장 참조.
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
 - **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
 - 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
@@ -54,6 +55,19 @@ updated: 2026-07-13
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-17 · 세션 11 (A-01/A-02/A-03 9분할 병렬 — 무인 예약 실행, 승인 대기 없음)
+- **A-01·A-02·A-03 (General·ANE·Other, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → **431 확정 고유**(QUEUED 428, HELD_ALREADY 3), UNRESOLVED 8건 추가(총 20).
+- 등급 A367 / B53 / C11. download_queue **620 → 1051항목**.
+- ★**커맨더 정정 사항**(서브에이전트 결과 검토에서 발견·수정):
+  1. **A-01c 재작업**: 담당 에이전트가 "원본 bib 파일 없음"을 이유로 **1단계(원본 대조)를 통째로 생략**하고 외부 DB만으로 확정 → 원인은 커맨더 프롬프트의 경로 오류(`{WD}/judges-index/` ≠ 실제 `5 Book 3 Judges Resources/judges-index/`). 올바른 경로로 재작업 지시 → **A등급 29→44 상향, UNRESOLVED 2→1**(R121 Bekkum→Benz 1972 해결·R128 병합), 제목 다이어크리틱·어순 오류 9건 추가 정정.
+  2. **중복 7건 고유화**: Bader 1994(R66/R72), Bal 1987(R77/R81), Brenner 1990(R184/R192), Brichto Curse(R196 1963초판/R197 1968재간), Ephʿal 2009 **3중복**(R424/R425/R430), Faber 1992(R444/R447). 서브에이전트들이 중복을 인지하고도 행을 남겨둔 것을 커맨더가 병합(cited_by 통합·ℹ중복병합 note 기재).
+  3. **별개 문헌 판정(병합 안 함)**: IDB 본편(Buttrick 1962, 4vols) vs IDB **보유판**(Crim 1976 Supplementary) / Dossin ARM **1권**(1950) vs **4권**(1951) — 제목이 동일해 중복으로 보이나 실제 별개 자료.
+  4. **병합 중 자체 실수 발견·복구**: Bal 1987 병합 시 `[확보완료:]` 경로를 가진 쪽(R81) 행을 버려 경로가 유실 → 복구 후 **HELD_ALREADY 53건 전수 검증**(전건 경로 보유 확인).
+  5. **데이터 오류 정정**: A-01b-036 author 필드에 `Barron, [PhD diss.]`가 들어가 있던 것 → `Barron`으로 정정(이름·수여대학 미확정은 notes에 ⚠ 표기).
+- ★고위험 저자정정 다수(전형적 off-by-one): **Van Seters 클러스터 5건**(xlsx 전부 'Bachmann'→Van Seters, 단 R68은 DDD 사전이라 van der Toorn/Becking/van der Horst 편으로 별도 확정), **Groß 자기인용 7건**('Dtn' 클러스터), **Zenger/Hossfeld**(가짜 저자명 'Exegese'에서 복원), Braude→Brenner, Brenner→Brettler, Cambridge→Cross, Drews→Dubovský, Ewald→Exum, Alter→Álvarez Barredo, Dalman→Da Riva/Lang/Fink, Darton(출판사명)→de Vaux 등.
+- **확보완료 재점검**: `worklist/held_audit.py`를 1051건 전체 재실행 → **신규 매칭 0건**(유일 score=1인 Bal 1988 "Murder and Difference"↔파일 "Death and Dissymmetry"는 동일저자·동일연도 **다른 저작**으로 기존 배제 판정 유지). xlsx 사본 확보상태 표기: 카테고리시트 5행 + 전체All 5행.
+- 대시보드 자동빌드 정상(1051행). 다음: A-04~A-12 (General·ANE, ~1279행 잔여)
 
 ### 2026-07-17 · 세션 10 (B-01/B-02/B-03 9분할 병렬 — 예약작업 충돌 없이 완료)
 - **B-01·B-02·B-03 (Book·Composition·Framework, 322행) DONE** — 각 청크를 3분할(총 9개) Sonnet 서브에이전트로 동시 병렬 위임, 12:12~12:31 KST(약 20분)에 전부 완료. 322행 → **300 확정 고유**(HELD_ALREADY 20, QUEUED 280), UNRESOLVED 4건 추가(B-01a 3건, B-01c 1건).

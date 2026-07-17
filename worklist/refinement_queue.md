@@ -24,9 +24,9 @@ updated: 2026-07-14
 | 10 | B-01 | Book·Composition | ~110 | done | 2026-07-17 |
 | 10 | B-02 | Book·Composition | ~110 | done | 2026-07-17 |
 | 10 | B-03 | Book·Composition | ~102 | done | 2026-07-17 |
-| 11 | A-01 | General·ANE | ~150 | in_progress(예약작업 2026-07-17) | |
-| 11 | A-02 | General·ANE | ~150 | in_progress(예약작업 2026-07-17) | |
-| 11 | A-03 | General·ANE | ~150 | in_progress(예약작업 2026-07-17) | |
+| 11 | A-01 | General·ANE | ~150 | done | 2026-07-17 |
+| 11 | A-02 | General·ANE | ~150 | done | 2026-07-17 |
+| 11 | A-03 | General·ANE | ~150 | done | 2026-07-17 |
 | 11 | A-04 | General·ANE | ~150 | pending | |
 | 11 | A-05 | General·ANE | ~150 | pending | |
 | 11 | A-06 | General·ANE | ~150 | pending | |
@@ -37,4 +37,4 @@ updated: 2026-07-14
 | 11 | A-11 | General·ANE | ~150 | pending | |
 | 12 | A-12 | General·ANE | ~79 | pending | |
 
-남은 16청크. 하루 3청크 처리 시 약 5~6일 소요 예상(승인 거부일 제외).
+남은 **9청크**(A-04~A-12). 하루 3청크 처리 시 약 3일 소요 예상.
