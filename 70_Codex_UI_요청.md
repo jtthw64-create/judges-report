@@ -4,8 +4,8 @@ type: work-order
 from: Claude(커맨더 세션)
 to: Codex
 created: 2026-07-16
-status: DONE
-open_items: []
+status: OPEN
+open_items: [WO-004]
 done_items: [WO-001, WO-002, WO-003]
 ---
 
@@ -126,6 +126,37 @@ done_items: [WO-001, WO-002, WO-003]
 - 미수령 수치가 확보완료+확보불가를 제외한 값으로 정확히 계산된다.
 - localStorage 저장 + 백엔드 폴링 동기화(다른 기기/새로고침에도 상태 유지)가 동작한다.
 - 기존 기능(확보완료 배지, 우선순위 토글, 재검토, 저자 정렬, 백엔드 폴링) 전부 정상.
+
+---
+
+## WO-004. 재검토/코멘트 textarea 입력 중 내용 유실 버그 (사용자 신고)
+
+### 배경 (버그 리포트)
+사용자 신고: "재검토 사유 입력 칸에 입력이 정상적으로 마감되지 않는 현상(중간에 내용 사라짐). 외부에서 작성 후 붙여넣어야 정상 입력 가능."
+
+### 커맨더가 확인한 원인
+`setInterval(loadFromBackend, 20000)`이 20초마다 `render()`를 호출한다. `render()`는 `document.getElementById("rows").innerHTML`을 통째로 재생성하는데, 이때:
+- 재검토 textarea(`id="rc_${d.id}"`)와 코멘트 textarea(`id="pf_${d.id}"`)는 사용자가 타이핑하는 값이 **JS 상태(`reclass[id].comment` / `prof[id].comment`)에 실시간 반영되지 않는다** — 각각 "신청" 버튼 클릭(`submitReclass`) 또는 `onblur`(`saveProfComment`) 시점에만 `document.getElementById(...).value`를 읽어 상태에 반영.
+- 따라서 사용자가 타이핑 중(아직 신청 안 누름/blur 안 됨) 20초 폴링이 돌면 `render()`가 옛 상태(빈 문자열 또는 이전 저장값)로 **해당 textarea DOM 노드를 통째로 교체**해버려 입력 중이던 텍스트와 포커스가 그대로 날아간다.
+- 붙여넣기는 순간적으로 끝나서 20초 창을 피하기 쉬우니 증상이 덜 보였을 뿐, 근본 원인은 같다.
+
+### 요구사항
+`build_dashboard.py`만 수정. 다음 중 하나(또는 더 나은 방법)로 해결할 것 — **권장은 A안**:
+
+**A안(권장, 근본 해결)**: `render()` 시작 시 현재 포커스된 요소가 `rc_`/`pf_` textarea라면 `{id, value, selectionStart, selectionEnd}`를 저장해두고, rows 재생성 후 **같은 id의 새 textarea에 값·커서 위치·포커스를 복원**할 것. 이렇게 하면 `render()`가 어떤 이유로 호출되든(폴링이든 다른 트리거든) 사용자가 타이핑 중인 내용이 절대 유실되지 않는다.
+
+**B안(차선, 더 간단)**: `loadFromBackend()`에서 `render()` 호출 전에 `document.activeElement`가 `rc_`/`pf_` textarea인지 확인하고, 그렇다면 **상태(`reclass`/`prof`/`got` 등)는 갱신하되 이번 사이클의 `render()` 호출만 건너뛴다**(다음 사용자 액션이나 다음 폴링 때 자연히 반영). B안은 20초 폴링발 유실만 막고, 다른 render() 트리거(같은 세션 내 다른 행 조작 등)로 인한 유실 가능성은 남는다 — 가능하면 A안으로.
+
+### 제약
+- `worklist/download_queue.csv` 데이터 내용은 건드리지 않는다.
+- 로컬 테스트는 http 서버로.
+- 완료 후 `python3 build_dashboard.py` 재생성 → 커밋 → push.
+
+### 검증 기준
+- textarea에 포커스를 두고 타이핑 중일 때 20초 이상 대기해도(또는 폴링을 수동 트리거해도) 입력 중이던 텍스트가 사라지지 않는다.
+- 커서 위치도 유지된다(이상적으로는 A안 기준).
+- 재검토 신청/코멘트 저장(신청 버튼·blur)은 기존처럼 정상 동작한다.
+- 기존 기능(확보완료·확보불가·우선순위·저자정렬·카테고리필터·백엔드폴링) 전부 정상.
 
 ---
 
