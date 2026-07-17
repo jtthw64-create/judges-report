@@ -284,7 +284,24 @@ async function loadFromBackend(){
   }catch(err){ /* 서버 미도달 시 로컬 상태 유지 */ }
 }
 
+function captureFocusedTextarea(){
+  const el=document.activeElement;
+  if(!el||el.tagName!=="TEXTAREA"||!/^(rc_|pf_)/.test(el.id)) return null;
+  return {id:el.id,value:el.value,selectionStart:el.selectionStart,selectionEnd:el.selectionEnd};
+}
+function restoreFocusedTextarea(snapshot){
+  if(!snapshot) return;
+  const el=document.getElementById(snapshot.id);
+  if(!el) return;
+  el.value=snapshot.value;
+  el.focus({preventScroll:true});
+  if(snapshot.selectionStart!==null&&snapshot.selectionEnd!==null){
+    el.setSelectionRange(snapshot.selectionStart,snapshot.selectionEnd);
+  }
+}
+
 function render(){
+  const focusedTextarea=captureFocusedTextarea();
   const q=(document.getElementById("q").value||"").toLowerCase();
   const authorHead=document.getElementById("authorHead");
   document.getElementById("authorSortMark").textContent=authorSort==="asc"?"▲":authorSort==="desc"?"▼":"⇅";
@@ -347,6 +364,7 @@ function render(){
       </td>`;
     rows.appendChild(tr);
   });
+  restoreFocusedTextarea(focusedTextarea);
 
   const shown=visible.length;
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;

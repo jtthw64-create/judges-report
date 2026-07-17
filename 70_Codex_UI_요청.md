@@ -4,9 +4,9 @@ type: work-order
 from: Claude(커맨더 세션)
 to: Codex
 created: 2026-07-16
-status: OPEN
-open_items: [WO-004]
-done_items: [WO-001, WO-002, WO-003]
+status: DONE
+open_items: []
+done_items: [WO-001, WO-002, WO-003, WO-004]
 ---
 
 # 70 · Codex 작업 지시서
@@ -213,3 +213,10 @@ Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증하는
 - `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
 - Codex가 커밋하지 못한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, `worklist/apps_script_backend.gs`, 본 문서)을 커맨더가 대신 커밋·push함.
 - **결론: WO-003 전 항목 검증 통과(백엔드 수정 포함).** 향후 새 이벤트 kind를 추가할 때는 **반드시 Apps Script `doPost`에도 분기를 추가**해야 한다는 점을 인수인계 문서에 반영 필요(자유형이 아님).
+
+- 담당: Codex
+- 일시: 2026-07-18 03:59 KST
+- 변경파일: `build_dashboard.py`, `download_dashboard.html`, `index.html`, `70_Codex_UI_요청.md`
+- 검증결과: WO-004 A안을 적용해 `render()` 시작 시 포커스된 `rc_`/`pf_` textarea의 id·입력값·선택 시작/끝을 캡처하고, 행 DOM 재생성 직후 같은 textarea에 값·포커스·커서(선택 범위)를 복원하도록 구현함. `python3 build_dashboard.py` 재생성 완료(1,051행), 생성 HTML 2종 내용 동일성 및 복원 로직 포함 여부 확인, 추출 JavaScript `node --check` 통과, `git diff --check` 통과. DOM 모의 실행으로 입력값·포커스·선택 범위 복원과 비대상 input 무시를 확인함. 기존 신청 버튼/blur 저장 및 백엔드 폴링 로직은 변경하지 않음.
+- CSV 확인: `worklist/download_queue.csv`는 Git HEAD 대비 diff 0이며 수정하지 않음.
+- 특이사항: 샌드박스가 로컬 HTTP 서버 포트 바인딩을 `PermissionError: [Errno 1] Operation not permitted`로 차단해 20초 폴링을 포함한 실브라우저 검증은 수행하지 못함. 생성물 문법·호출 순서·DOM 모의 테스트로 대체 검증함.
