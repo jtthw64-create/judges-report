@@ -24,9 +24,9 @@ updated: 2026-07-13
 | 7 | E-01 | Gideon·Abimelech | 61 | DONE | 2026-07-14 | worklist/E-01.csv |
 | 8 | D-01 | Deborah·Jael·Barak | 62 | DONE | 2026-07-17 | worklist/D-01.csv |
 | 9 | C-01 | Samson | 133 | DONE | 2026-07-17 | worklist/C-01.csv (a/b/c 3분할 병합) |
-| 10 | B-01 | Book·Composition | ~110 | NEW | | |
-| 10 | B-02 | Book·Composition | ~110 | NEW | | |
-| 10 | B-03 | Book·Composition | ~102 | NEW | | |
+| 10 | B-01 | Book·Composition | ~110 | DONE | 2026-07-17 | worklist/B-01.csv (a/b/c 3분할 병합) |
+| 10 | B-02 | Book·Composition | ~110 | DONE | 2026-07-17 | worklist/B-02.csv (a/b/c 3분할 병합) |
+| 10 | B-03 | Book·Composition | ~102 | DONE | 2026-07-17 | worklist/B-03.csv (a/b/c 3분할 병합) |
 | 11 | A-01 | General·ANE | ~150 | NEW | | |
 | 11 | A-02 | General·ANE | ~150 | NEW | | |
 | 11 | A-03 | General·ANE | ~150 | NEW | | |
@@ -40,19 +40,29 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 9 / 23청크 · 처리(원행) 344 / 2395건 · download_queue **320항목**(HELD_ALREADY 30 포함) · UNRESOLVED 8
+**집계:** 완료 12 / 23청크 · 처리(원행) 666 / 2395건 · download_queue **620항목**(HELD_ALREADY 50 포함) · UNRESOLVED 12
 
 ## 다음 액션
-→ **B-01 (Book·Composition, ~110건)** 정제. (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 — 대형 배치이므로 분할 위임 권장)
+→ **A-01 (General·ANE, ~150건)** 정제. 이후 A-02~A-12까지 동일 카테고리 대형 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 위임 — 대형 배치이므로 3분할 병렬 위임 권장, B-01/B-02/B-03 각 3분할·9서브에이전트 병렬 방식이 잘 작동함)
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
-- **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지 — C-01에서 일부 서브에이전트가 잘못 써서 사후 정정한 사례 있음). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
+- **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
 - 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
 - GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (public). 매 배치 후 커밋+push.
 - 신규 청크마다 `40_검증방법론.md` 8절(원본폴더 확보완료 대조) 재실행 필수. **`download_queue.csv` 전체 갱신 후 `python3 worklist/held_audit.py`로 재점검**(8-5절 원칙).
+- **예약작업(14:00/09:00 KST) 충돌 주의**: 커맨더가 청크를 직접 처리할 땐 착수 즉시 `worklist/refinement_queue.md`의 해당 행 status를 `pending`이 아닌 값으로 바꿔 잠글 것(예: `in_progress(커맨더 세션, ...)`). 예약작업은 `status: pending`만 골라가므로 이렇게 하면 자동으로 건너뛴다.
 
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-17 · 세션 10 (B-01/B-02/B-03 9분할 병렬 — 예약작업 충돌 없이 완료)
+- **B-01·B-02·B-03 (Book·Composition·Framework, 322행) DONE** — 각 청크를 3분할(총 9개) Sonnet 서브에이전트로 동시 병렬 위임, 12:12~12:31 KST(약 20분)에 전부 완료. 322행 → **300 확정 고유**(HELD_ALREADY 20, QUEUED 280), UNRESOLVED 4건 추가(B-01a 3건, B-01c 1건).
+- 등급 A231/B64/C5.
+- **14:00 예약 정제작업과 충돌 방지**: 착수 즉시 `worklist/refinement_queue.md`에서 B-01/02/03을 `in_progress`로 잠그고 push → 예약작업이 있었다면 자동으로 건너뛰도록 조치. 12:32 KST에 전 작업(취합·재점검·커밋)을 마쳐 실제로 14:00 이전 종료.
+- **확보완료 재점검**: `worklist/held_audit.py`를 620건 전체에 재실행 → 신규 누락 없음 확인(기존에 배제 판정한 애매 케이스만 재확인됨, B-01a-005 Amit 1999는 서브에이전트가 이미 "다른 저작"으로 정확히 배제).
+- ★고위험 저자정정 다수: Groß 2021 원서 Literaturverzeichnis PDF를 직접 열람해 MISSING_Groß.md의 절단 문제를 상당 부분 해소(B-01b). Sasson, Jack M. 본인 자기인용 2건 추가 적발(B-02b, 8-5절 유형 반복).
+- 총 **620항목** (12/23 청크, HELD_ALREADY 50, UNRESOLVED 12). 대시보드 자동빌드 정상.
+- 다음: A-01~A-12 (General·ANE, 총 ~1729건 잔여 — 프로젝트 최대 분량대)
 
 ### 2026-07-17 · 세션 9 (C-01 3분할 병렬 + 확보완료 재점검 11건 추가)
 - **C-01 (Samson, 133행) DONE** — 3분할(C-01a/b/c) 병렬 Sonnet 위임. 133→**123 확정 고유**(HELD_ALREADY 8, QUEUED 115) + **UNRESOLVED 7건**(bömer/Ebeling/Fakasiieiki/Gtu·Gese/Hennann/Lesley/Mazar 2023 — 게재지·소속 미확인).
