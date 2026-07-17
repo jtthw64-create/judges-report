@@ -83,6 +83,8 @@ TEMPLATE = r"""<!doctype html>
   tr.held td{opacity:.72}tr.held .held-badge,tr.held .held-path{opacity:1}
   .held-badge{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--gotink);border-radius:10px;color:var(--gotink);font-size:10px;font-weight:700;white-space:nowrap;vertical-align:1px}
   .held-path{font-size:10px;line-height:1.35;color:var(--sub);font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
+  tr.unavailable{box-shadow:inset 4px 0 0 var(--high)}
+  .unavailable-badge{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--high);border-radius:10px;background:var(--warnbg);color:var(--high);font-size:10px;font-weight:700;white-space:nowrap;vertical-align:1px}
   .pri{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;color:#fff;cursor:pointer;border:none}
   .pri.high{background:var(--high)}.pri.mid{background:var(--mid)}.pri.low{background:var(--low)}
   .pri-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -102,6 +104,7 @@ TEMPLATE = r"""<!doctype html>
   .mbtn.on-req{background:var(--high);color:#fff;border-color:var(--high)}
   .mbtn.on-prio{background:var(--gotink);color:#fff;border-color:var(--gotink)}
   .mbtn.on-skip{background:var(--sub);color:#fff}
+  .mbtn.on-unavailable{background:var(--high);color:#fff;border-color:var(--high)}
   .pend{font-size:10px;color:var(--high);margin-top:2px}
   .ack{font-size:10px;color:var(--sub);display:flex;gap:4px;align-items:center;margin-top:3px}
   footer{margin-top:18px;color:var(--sub);font-size:12px}
@@ -143,7 +146,7 @@ TEMPLATE = r"""<!doctype html>
     td:nth-child(6)::before{content:"접근"}
     td:nth-child(7)::before{content:"원본 위치"}
     td:nth-child(8)::before{content:"재검토"}
-    td:nth-child(9)::before{content:"교수님 코멘트"}
+    td:nth-child(9)::before{content:"코멘트"}
     .title{font-size:13px}.cite{font-size:11px}
     .panel textarea{height:52px;font-size:12px}
     .mbtn{font-size:10px;padding:5px 7px}
@@ -164,14 +167,14 @@ TEMPLATE = r"""<!doctype html>
     <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
-    <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleAuthorSort()">저자 <span id="authorSortMark">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>교수님 코멘트</th>
+    <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleAuthorSort()">저자 <span id="authorSortMark">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>코멘트</th>
   </tr></thead><tbody id="rows"></tbody></table></div>
   <footer>
-    ✔ <b>받음</b> 체크와 재검토·코멘트·우선순위 변경은 이 브라우저에 자동 저장됩니다(localStorage)<span id="syncNote"></span>.<br>
+    ✔ <b>받음</b> 체크와 확보불가·재검토·코멘트·우선순위 변경은 이 브라우저에 자동 저장됩니다(localStorage)<span id="syncNote"></span>.<br>
     원본 엑셀 위치 = 기존 <code>Judges_missing_by_character.xlsx</code>의 <b>시트!행</b> 좌표.<br>
     우선순위 배지 <span class="pri high">Major</span><span class="pri mid">Secondary</span><span class="pri low">off-list</span>(클릭하면 다음 값으로 전환, 변경분은 매일 지정 시각 순찰에서 기록) · 신뢰등급 <span class="conf confA">A</span>직접확인 <span class="conf confB">B</span>요약기반 <span class="conf confC">C</span>추정(원문확인) · <b>⚠</b>확인필요 <b>ℹ</b>참고<br>
     <b>재검토 신청</b>: 분류가 틀렸다고 판단되면 코멘트와 함께 신청 — 매일 지정 시각에 AI가 검토 후 결과 기록.
-    <b>교수님 코멘트</b>: [우선 받기]/[불필요] + 코멘트, AI 자동처리 대상 아님(조교 확인용).
+    <b>코멘트</b>: [우선 받기]/[불필요] + 코멘트, AI 자동처리 대상 아님(조교 확인용).
   </footer>
 </div><script>
 /*DATA*/
@@ -183,11 +186,13 @@ const KEY_BD="judges_dl_bd_override_v1";
 const KEY_BD_HIST="judges_dl_bd_history_v1";
 const KEY_RECLASS="judges_dl_reclass_v1";
 const KEY_PROF="judges_dl_prof_v1";
+const KEY_UNAVAILABLE="judges_dl_unavailable_v1";
 let got=JSON.parse(localStorage.getItem(KEY_GOT)||"{}");
 let bdOverride=JSON.parse(localStorage.getItem(KEY_BD)||"{}");
 let bdHistory=JSON.parse(localStorage.getItem(KEY_BD_HIST)||"[]");
 let reclass=JSON.parse(localStorage.getItem(KEY_RECLASS)||"{}");
 let prof=JSON.parse(localStorage.getItem(KEY_PROF)||"{}");
+let unavailable=JSON.parse(localStorage.getItem(KEY_UNAVAILABLE)||"{}");
 let filter={type:"all"};
 let authorSort=null;
 document.getElementById("syncNote").textContent = SHEETS_ENDPOINT ? "" : " (⚠ 서버 미연결 — 이 기기에만 저장됨)";
@@ -202,10 +207,15 @@ function save(){
   localStorage.setItem(KEY_BD_HIST,JSON.stringify(bdHistory));
   localStorage.setItem(KEY_RECLASS,JSON.stringify(reclass));
   localStorage.setItem(KEY_PROF,JSON.stringify(prof));
+  localStorage.setItem(KEY_UNAVAILABLE,JSON.stringify(unavailable));
 }
 function setF(f){filter=f;render()}
 function toggleAuthorSort(){authorSort=authorSort==="asc"?"desc":"asc";render()}
 function toggle(id){got[id]=!got[id];save();syncToBackend("got",{id,got:got[id]});render()}
+function toggleUnavailable(id){
+  unavailable[id]=!unavailable[id];
+  save();syncToBackend("unavailable",{id,field1:String(unavailable[id])});render();
+}
 function effBd(d){return bdOverride[d.id]||d.bd}
 function cycleBd(id,orig){
   const cur=bdOverride[id]||orig;
@@ -260,6 +270,7 @@ async function loadFromBackend(){
       const kind=r.kind,id=r.id;
       if(!kind||!id) return;
       if(kind==="got"){ got[id]=(String(r.field1)==="true"); }
+      else if(kind==="unavailable"){ unavailable[id]=(String(r.field1)==="true"); }
       else if(kind==="priority_change"){
         if(r.field2==="__revert_to_original__") delete bdOverride[id]; else bdOverride[id]=r.field2;
       }
@@ -288,8 +299,9 @@ function render(){
   const visible=DATA.filter(d=>{
     const bd=effBd(d);
     if(filter.type==="bd"&&bd!==filter.value)return false;
-    if(filter.type==="todo"&&(got[d.id]||d.status==="HELD_ALREADY"))return false;
+    if(filter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
     if(filter.type==="held"&&d.status!=="HELD_ALREADY")return false;
+    if(filter.type==="unavailable"&&!unavailable[d.id])return false;
     if(filter.type==="category"&&d.cat!==filter.value)return false;
     if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
     if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return false;
@@ -307,17 +319,19 @@ function render(){
     const tr=document.createElement("tr");
     if(got[d.id])tr.classList.add("got");
     if(d.status==="HELD_ALREADY")tr.classList.add("held");
+    if(unavailable[d.id])tr.classList.add("unavailable");
     const overridden=bdOverride[d.id]!==undefined;
     const rc=reclass[d.id]||{};
     const pf=prof[d.id]||{};
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}</div><div class="cite">${d.yr}</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr}</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="author-cell">${d.au}</td>
       <td class="cite">${d.js}</td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
       <td class="ref">${d.ref}</td>
       <td class="panel">
+        <button class="mbtn ${unavailable[d.id]?'on-unavailable':''}" onclick="toggleUnavailable('${d.id}')">${unavailable[d.id]?'✕ 확보불가':'확보불가'}</button>
         <button class="mbtn ${rc.status==='pending'?'on-req':''}" onclick="toggleReclass('${d.id}')">${rc.status==='pending'?'대기중':(rc.status==='ai_reviewed'?'검토완료':'재검토 신청')}</button>
         ${rc.status==='pending'?`<div class="pend">⏳ AI 검토 대기</div>`:""}
         ${rc.status==='ai_reviewed'&&rc.result?`<div class="note info">🤖 ${rc.result}</div>`:""}
@@ -337,7 +351,8 @@ function render(){
   const shown=visible.length;
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;
   const held=DATA.filter(d=>d.status==="HELD_ALREADY").length;
-  const todo=DATA.filter(d=>!got[d.id]&&d.status!=="HELD_ALREADY").length;
+  const unavailableCount=DATA.filter(d=>unavailable[d.id]).length;
+  const todo=DATA.filter(d=>!got[d.id]&&!unavailable[d.id]&&d.status!=="HELD_ALREADY").length;
   const reclassPending=Object.keys(reclass).filter(id=>reclass[id].status==="pending").length;
   const profUnread=Object.keys(prof).filter(id=>{const p=prof[id];return (p.comment||p.choice)&&!p.ack;}).length;
   const statDefs=[
@@ -345,10 +360,11 @@ function render(){
     {type:"got",label:"받음 ✔",n:done},
     {type:"todo",label:"미수령",n:todo},
     {type:"held",label:"확보완료",n:held},
+    {type:"unavailable",label:"확보불가",n:unavailableCount},
     {type:"bd",value:"통독",label:"Major",n:DATA.filter(d=>effBd(d)==="통독").length},
     {type:"conf",value:"C",label:"C(확인요)",n:DATA.filter(d=>d.conf==="C").length},
     {type:"reclass",label:"재검토 대기",n:reclassPending,alert:!!reclassPending},
-    {type:"prof",label:"교수님 미확인",n:profUnread,alert:!!profUnread},
+    {type:"prof",label:"코멘트 미확인",n:profUnread,alert:!!profUnread},
   ];
   document.getElementById("stats").innerHTML=statDefs.map((s,i)=>{
     const isActive=filter.type===s.type&&(s.value===undefined||filter.value===s.value);

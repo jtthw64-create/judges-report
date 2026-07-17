@@ -4,9 +4,9 @@ type: work-order
 from: Claude(커맨더 세션)
 to: Codex
 created: 2026-07-16
-status: OPEN
-open_items: [WO-003]
-done_items: [WO-001, WO-002]
+status: DONE
+open_items: []
+done_items: [WO-001, WO-002, WO-003]
 ---
 
 # 70 · Codex 작업 지시서
@@ -164,3 +164,21 @@ Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증함:
 - `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
 - Codex가 커밋 못 한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, 본 문서)을 커맨더가 대신 커밋·push함.
 - **결론: WO-002 전 항목 검증 통과.**
+
+- 담당: Codex
+- 일시: 2026-07-17 (KST)
+- 변경파일: `build_dashboard.py`, `download_dashboard.html`, `index.html`, `70_Codex_UI_요청.md`
+- 검증결과: `python3 build_dashboard.py` 재생성 완료(1,051행). 생성 HTML 2종의 내용 동일성, CSV/DATA 1,051행 일치, CSV 전 행 17열, 표·모바일·footer의 “코멘트” 라벨, 확보불가 토글·로컬저장·`unavailable` 백엔드 이벤트(field1=true/false)·폴링 fold·배지/행 스타일·통계 타일 필터·미수령 제외식을 정적 검증함. 추출 JavaScript의 `node --check` 통과, `git diff --check` 통과. 기존 확보완료·저자 정렬·우선순위·재검토·코멘트·백엔드 폴링 코드가 유지됨을 확인함.
+- CSV 확인: `worklist/download_queue.csv`는 Git HEAD 대비 diff 0이며 수정하지 않음.
+- 특이사항: 샌드박스가 `git pull` 시 `.git/FETCH_HEAD` 쓰기를 `Operation not permitted`로 차단해 원격 동기화를 수행하지 못함. 로컬 HTTP 서버도 `PermissionError: [Errno 1] Operation not permitted`로 포트 바인딩이 차단되어 실브라우저 클릭 검증은 수행하지 못했고, 생성 HTML 구조·DATA·CSS·JS 문법과 상태 조건을 정적 검증함. `git add` 시 `.git/index.lock` 생성도 `Operation not permitted`로 차단되어 commit·push는 수행하지 못함. WO-003 지시에 따라 Apps Script 코드는 변경하지 않음.
+
+### 커맨더 검증 및 백엔드 버그 수정 (2026-07-17, Claude)
+Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증하는 과정에서 **백엔드 미대응 버그를 발견**했다:
+- WO-003 지시서에 "새 kind는 서버 재배포 없이 자유형으로 저장된다"고 잘못 적었음 — **사실이 아니었다.** 실제 Apps Script `doPost`는 `kind`별 `if/else if` 하드코딩 스위치라, 목록에 없는 `"unavailable"` kind는 `field1/2/3`이 전부 빈 문자열로 저장됨(백엔드 Sheets에서 `field1: ''` 확인).
+- `worklist/apps_script_backend.gs`에 `else if (kind === "unavailable") { f1 = data.field1 || ""; }` 분기 추가, Apps Script 프로젝트에 새 버전(버전 3)으로 재배포(exec URL은 그대로 유지됨).
+- 재배포 후 curl로 POST→GET 왕복 재확인: `field1` 정상 저장(`true`/`false`) 확인.
+- 실브라우저 전체 흐름 재검증: 토글 클릭 → `unavailable[id]=true` → 1.5초(백엔드 폴링 유예) 후에도 상태 유지 → `tr` 클래스에 `unavailable` 추가, `.unavailable-badge` "확보불가" 표시, 통계 타일 0→1 반영 확인. 재클릭으로 원복도 정상.
+- 테스트 중 생성된 시트 이벤트(G-01-001/I-01-001/TEST-002)는 정리하거나 최종 상태가 기본값(false)으로 수렴함을 확인.
+- `worklist/download_queue.csv` HEAD 대비 diff 0 재확인.
+- Codex가 커밋하지 못한 변경분(`build_dashboard.py`, `download_dashboard.html`, `index.html`, `worklist/apps_script_backend.gs`, 본 문서)을 커맨더가 대신 커밋·push함.
+- **결론: WO-003 전 항목 검증 통과(백엔드 수정 포함).** 향후 새 이벤트 kind를 추가할 때는 **반드시 Apps Script `doPost`에도 분기를 추가**해야 한다는 점을 인수인계 문서에 반영 필요(자유형이 아님).

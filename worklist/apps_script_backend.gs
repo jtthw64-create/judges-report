@@ -36,6 +36,8 @@ function doPost(e) {
     f1 = data.comment || ""; f2 = data.status || ""; f3 = data.result || "";
   } else if (kind === "prof") {
     f1 = data.choice || ""; f2 = data.comment || "";
+  } else if (kind === "unavailable") {
+    f1 = data.field1 || "";
   }
   sheet.appendRow([ts, kind, id, f1, f2, f3]);
   return ContentService.createTextOutput(JSON.stringify({ ok: true }))

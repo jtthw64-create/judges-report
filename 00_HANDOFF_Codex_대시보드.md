@@ -68,11 +68,13 @@ node --check /tmp/dash.js && echo OK
   - 링크: `https://docs.google.com/spreadsheets/d/1EZu2htHichsGf30ujWeM0-nd5zA_tfAHJH0hl9nmeJo/edit`
   - 시트 탭 "events" 하나만 사용. 헤더: `ts, kind, id, field1, field2, field3`
   - **이벤트로그 방식(append-only)**: 모든 변경이 새 행으로 쌓임. 같은 id에 대해 여러 행이 있으면 **가장 최근(ts) 행이 현재 상태**. GET 응답을 그대로 시간순 fold해서 상태를 복원한다(대시보드 JS의 `loadFromBackend()` 참고).
-  - kind별 필드 의미:
+  - ⚠️ **kind는 자유형이 아니다.** Apps Script `doPost`가 `kind`별 `if/else if` 하드코딩 스위치로 `field1/2/3`을 채운다. **새 kind를 클라이언트(build_dashboard.py)에 추가할 때마다 `worklist/apps_script_backend.gs`의 `doPost`에도 분기를 추가하고 재배포해야 한다** — 안 하면 그 kind는 `field1/2/3`이 전부 빈 문자열로 저장된다(WO-003에서 `unavailable` kind 추가 시 이걸 빠뜨려서 실제로 겪었다. 커맨더가 사후 발견·수정·재배포함).
+  - kind별 필드 의미(현재 doPost가 처리하는 것):
     - `got`: field1 = "true"/"false" (받음 체크)
     - `priority_change`: field1=이전 boundary값, field2=새 값(또는 `"__revert_to_original__"`=복원), field3=review 상태
     - `reclass`: field1=사용자 코멘트, field2=status("pending"/"ai_reviewed"), field3=AI 검토결과 텍스트
     - `prof`: field1=choice("prio"/"skip"/""), field2=코멘트
+    - `unavailable`: field1 = "true"/"false" (확보불가 표시, WO-003)
 
 - Apps Script 프로젝트(이 Sheet에 바인딩됨):
   - 프로젝트 URL: `https://script.google.com/u/0/home/projects/1K8qQFCWPxUjVkE9b-R0DJojFIvYuW3ci_2kh4Kor7Gk5wcpOr7mr3doa/edit`
