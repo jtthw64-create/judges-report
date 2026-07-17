@@ -21,9 +21,9 @@ updated: 2026-07-14
 |---|---|---|---|---|---|
 | 8 | D-01 | Deborah·Jael·Barak | 62 | done | 2026-07-17 |
 | 9 | C-01 | Samson | 133 | done | 2026-07-17 |
-| 10 | B-01 | Book·Composition | ~110 | pending | |
-| 10 | B-02 | Book·Composition | ~110 | pending | |
-| 10 | B-03 | Book·Composition | ~102 | pending | |
+| 10 | B-01 | Book·Composition | ~110 | in_progress(커맨더 세션, 2026-07-17 12:12 KST 착수 — 예약작업은 건너뛸 것) | |
+| 10 | B-02 | Book·Composition | ~110 | in_progress(커맨더 세션, 2026-07-17 12:12 KST 착수 — 예약작업은 건너뛸 것) | |
+| 10 | B-03 | Book·Composition | ~102 | in_progress(커맨더 세션, 2026-07-17 12:12 KST 착수 — 예약작업은 건너뛸 것) | |
 | 11 | A-01 | General·ANE | ~150 | pending | |
 | 11 | A-02 | General·ANE | ~150 | pending | |
 | 11 | A-03 | General·ANE | ~150 | pending | |
