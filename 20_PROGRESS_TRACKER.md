@@ -30,9 +30,9 @@ updated: 2026-07-13
 | 11 | A-01 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-01.csv (a/b/c 3분할 병합) |
 | 11 | A-02 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-02.csv (a/b/c 3분할 병합) |
 | 11 | A-03 | General·ANE | ~150 | DONE | 2026-07-17 | worklist/A-03.csv (a/b/c 3분할 병합) |
-| 11 | A-04 | General·ANE | ~150 | NEW | | |
-| 11 | A-05 | General·ANE | ~150 | NEW | | |
-| 11 | A-06 | General·ANE | ~150 | NEW | | |
+| 11 | A-04 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-04.csv (a/b/c 3분할 병합) |
+| 11 | A-05 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-05.csv (a/b/c 3분할 병합) |
+| 11 | A-06 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-06.csv (a/b/c 3분할 병합) |
 | 11 | A-07 | General·ANE | ~150 | NEW | | |
 | 11 | A-08 | General·ANE | ~150 | NEW | | |
 | 11 | A-09 | General·ANE | ~150 | NEW | | |
@@ -40,10 +40,10 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 15 / 23청크 · 처리(원행) 1116 / 2395건 · download_queue **1051항목**(HELD_ALREADY 53 포함) · UNRESOLVED 20
+**집계:** 완료 18 / 23청크 · 처리(원행) 1566 / 2395건 · download_queue **1480항목**(HELD_ALREADY 60 포함) · UNRESOLVED 29
 
 ## 다음 액션
-→ **A-04 (General·ANE, ~150건)** 정제. 이후 A-05~A-12까지 동일 카테고리 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
+→ **A-07 (General·ANE, ~150건)** 정제. 이후 A-08~A-12까지 동일 카테고리 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
 - ★**서브에이전트 위임 시 원본 bib 경로를 반드시 명시할 것**: `5 Book 3 Judges Resources/judges-index/extracted/`(작업폴더 하위 아님). 2026-07-17 세션에서 경로를 잘못 안내해 A-01c 담당이 1단계(원본 대조)를 통째로 생략하고 외부 DB만으로 확정 → 재작업으로 A등급 29→44 상향, UNRESOLVED 1건 해결. 40_검증방법론.md 9장 참조.
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
 - **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
@@ -55,6 +55,21 @@ updated: 2026-07-13
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-18 · 세션 12 (A-04/A-05/A-06 9분할 병렬 — 무인 예약 실행)
+- **A-04·A-05·A-06 (General·ANE, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → 서브에이전트 단계 434건 → **커맨더 교차중복 5건 병합 후 429건 신규 편입**. download_queue **1051 → 1480항목**. UNRESOLVED 20 → 29(+9).
+- 청크별: A-04 144건(A115/B25/C4, HELD 4) · A-05 140건(A112/B24/C4) · A-06 145건(A98/B43/C4, HELD 2).
+- ★**커맨더 정정 사항**:
+  1. **교차중복 5건 병합**(신규 행 폐기·기존 행에 cited_by 통합): A-04b-043↔B-01c-030(Gaß 2005 Ortsnamen), A-05a-034↔A-01b-029(Hallo 2004 Achsah), A-05b-019↔B-02a-031(Hess 1997 4QJudg), A-06a-031↔A-01b-040(Barthélemy 1982 OBO 50/1), A-06b-027↔B-02b-020(Klein 1999 Achsah). 9개 에이전트가 각자 청크만 봐서 **기존 큐와의 중복은 구조적으로 못 잡는다** — 통합 단계 교차대조가 필수임을 재확인.
+  2. **held_audit 전체 재실행(1480건)으로 확보완료 2건 추가 발견**: `A-04b-016`(Fritz 2006, Maeir–de Miroschedji FS 수록 — 원본이 챕터 제목 절단이라 에이전트가 못 잡음. 보유 파일명으로 **제목까지 복원**), `A-03b-026`(Groß 1998 SBS 176 — **A-03 정제 시 누락**, `Nuri added` 하위폴더에 서명 전체가 파일명인 형태라 성씨+연도 매칭이 약했음). HELD_ALREADY 58→60, 전건 `[확보완료:` 경로 보유 검증 통과.
+  3. **boundary 오분류 29건 일괄 정정**(9-4절 유형 재발): VTSup·BZAW·LHBOTS·JSOTSup·OBO·WMANT·FRLANT·BWANT·AThANT 소속인데 `off-list`/`표적`으로 잘못 분류돼 있던 행. 이번 배치 신규분뿐 아니라 **A-01~A-03·B·C·I 등 기존 청크분이 대다수** — FAT 7건 정정(2026-07-17)이 FAT만 고치고 끝난 탓. 통독 283→312.
+  4. **xlsx 표기 오류 자체 발견·복구**: 서브에이전트 산문 보고의 ID 오기(`R508(=A-04b-008)`, 실제 CSV는 A-04b-007=R508)를 그대로 믿어 R509(Noth 1957, 미확보)에 `완료`를 찍었다가 회수하고 R508에 정표기. **교훈: xlsx 반영 대상은 산문 보고가 아니라 CSV의 `xlsx_ref`에서 도출할 것.**
+- ★고위험 저자정정(전형적 off-by-one 대량 적발):
+  - **Hurowitz→Sasson 5건**(A-05c, R728~R732 — 인접 6행 중 5행이 오귀속. Sasson 본인 자기인용이 Hurowitz로 밀린 형태)
+  - **"Freunden"→Noth, Martin 5건**(A-04b, R507~R511 — Groß bib OCR 손상 구간. R507은 사사 직무론 핵심 논문 Festschrift Bertholet 1950으로 신규 식별)
+  - **Jenni→Jeremias/Jericke 6건 + Jonker→Joosten·Kasher→Katz**(A-06a, 알파벳 인접 밀림 10건)
+  - 기타: Fischer 1975→Fleishman 2006, Fischer 1985→Floss 1985, Fnuell 1993→Fewell&Gunn 1990, Josue→Barthélemy(제목 첫 단어를 저자로 오인), Language 1965→Astour, Herdner→Hess, Handy→Haran, Hvidberg 2002→Irsigler(Hvidberg는 1890년 사망 — 저작 불가능), Green→Greenberg, Globt→Görg, Ishida 1971→Israel Museum(기관저자).
+- 대시보드 자동빌드 정상(1480행). 다음: **A-07~A-12** (General·ANE, ~829행 잔여)
 
 ### 2026-07-17 · 세션 11 (A-01/A-02/A-03 9분할 병렬 — 무인 예약 실행, 승인 대기 없음)
 - **A-01·A-02·A-03 (General·ANE·Other, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → **431 확정 고유**(QUEUED 428, HELD_ALREADY 3), UNRESOLVED 8건 추가(총 20).
