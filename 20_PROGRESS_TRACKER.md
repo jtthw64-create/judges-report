@@ -33,17 +33,17 @@ updated: 2026-07-13
 | 11 | A-04 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-04.csv (a/b/c 3분할 병합) |
 | 11 | A-05 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-05.csv (a/b/c 3분할 병합) |
 | 11 | A-06 | General·ANE | ~150 | DONE | 2026-07-18 | worklist/A-06.csv (a/b/c 3분할 병합) |
-| 11 | A-07 | General·ANE | ~150 | NEW | | |
-| 11 | A-08 | General·ANE | ~150 | NEW | | |
-| 11 | A-09 | General·ANE | ~150 | NEW | | |
+| 11 | A-07 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-07.csv (a/b/c 3분할 병합) |
+| 11 | A-08 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-08.csv (a/b/c 3분할 병합) |
+| 11 | A-09 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-09.csv (a/b/c 3분할 병합) |
 | 11 | A-10 | General·ANE | ~150 | NEW | | |
 | 11 | A-11 | General·ANE | ~150 | NEW | | |
 | 11 | A-12 | General·ANE | ~79 | NEW | | |
 
-**집계:** 완료 18 / 23청크 · 처리(원행) 1566 / 2395건 · download_queue **1480항목**(HELD_ALREADY 60 포함) · UNRESOLVED 29
+**집계:** 완료 21 / 23청크 · 처리(원행) 2016 / 2395건 · download_queue **1912항목**(HELD_ALREADY 70 포함) · UNRESOLVED 31
 
 ## 다음 액션
-→ **A-07 (General·ANE, ~150건)** 정제. 이후 A-08~A-12까지 동일 카테고리 잔여 배치(각 ~150건, A-12만 ~79건). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
+→ **A-10 (General·ANE, ~150건)** 정제. 이후 A-11·A-12까지가 마지막 잔여 배치(A-12만 ~79건, 시트 R1352~R1730). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
 - ★**서브에이전트 위임 시 원본 bib 경로를 반드시 명시할 것**: `5 Book 3 Judges Resources/judges-index/extracted/`(작업폴더 하위 아님). 2026-07-17 세션에서 경로를 잘못 안내해 A-01c 담당이 1단계(원본 대조)를 통째로 생략하고 외부 DB만으로 확정 → 재작업으로 A등급 29→44 상향, UNRESOLVED 1건 해결. 40_검증방법론.md 9장 참조.
 - download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
 - **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
@@ -55,6 +55,24 @@ updated: 2026-07-13
 ---
 
 ## 세션 로그 (최신이 위로 append)
+
+### 2026-07-19 · 세션 13 (A-07/A-08/A-09 9분할 병렬 — 무인 예약 실행)
+- **A-07·A-08·A-09 (General·ANE, R902~R1351, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → 서브에이전트 단계 437건 → **커맨더 교차중복 5건 병합 후 432건 신규 편입**. download_queue **1480 → 1912항목**. UNRESOLVED 29 → 31(+2).
+- 청크별: A-07 146건(A100/B32/C14) · A-08 143건(A116/B24/C3, HELD 4) · A-09 143건(A88/B47/C8, HELD 2).
+- ★**커맨더 정정 사항**:
+  1. **교차중복 5건 병합**: A-07a-001↔A-06c-049(Layton 1990 — xlsx R901/R902 인접 중복, cited_by Groß;Smith 통합), A-08a-042↔B-02c-019(Mosca 1984 Who Seduced Whom), A-08b-020↔A-03a-014(Vaux 1978 Early History of Israel), A-08c-029↔A-06c-021(Kupper ARM 28), 그리고 **신규 내부** A-07b-017↔A-07a-012(Lemos 2006 — 서로 다른 서브에이전트가 각각 Sasson·Groß 인용분을 잡음). 청크 경계에 걸친 중복은 에이전트가 구조적으로 못 잡는다는 점 3회 연속 재확인.
+  2. **병합 안 함(별개 저작)**: Feldman 1998 *Josephus's Interpretation of the Bible*(UC Press) vs A-04a-008 *Studies in Josephus' Rewritten Bible*(JSJSup 58) — 동일 저자·동일 연도지만 별개 단행본.
+  3. **A-09c CSV 인용부호 오류 5행 복구**: notes에 콤마가 있는데 큰따옴표로 감싸지 않아 18컬럼으로 깨진 행을 병합·재작성(csv.writer로 quoting 정규화). **17컬럼 검증을 통합 단계 필수 절차로 둘 것.**
+  4. **boundary 오분류 132건 일괄 정정**(통독 58 + 표적 74). 2026-07-18의 29건 정정 이후에도 남아 있던 대량 오분류를 저널·시리즈 표 **전체**를 정규식화해 전수 점검. 통독 312→447, 표적 69→236, off-list 1099→1229(신규분 포함). 오탐 12건은 제외 판정(Sheffield **JSOT Press**=출판사 / Subsidia·Analecta **Biblica** / JBL·JSOT Monograph Series / **JTS**=Jewish Theological Seminary 기관명 — 저널 약어와 형태만 같은 것들).
+  5. **held_audit 전수 재점검(1912건)으로 소급 누락 4건 추가 발견**: `I-01-002`(Knauf 1991 Eglon and Ophrah), `J-01-002`(Maisler 1934 Shamgar ben ʿAnat), `J-01-003`(Scherer 2002 Simson und Schamgar), `J-01-004`(van Selms 1964 Judge Shamgar) — **모두 `2 Ehud/Nuri added/`·`2 Shamgar/Nuri added/` 하위폴더**. 8-5절이 지적한 `Nuri added` 패턴이 또 나왔다. HELD_ALREADY 60→70, 전건 `[확보완료:` 경로 보유 검증 통과.
+  6. xlsx 확보상태 표기: 카테고리 시트 11행 + `전체 All` 11행(J-01-004는 R5·R6 두 행에 걸친 중복 항목이라 양쪽 표기). **CSV의 `xlsx_ref`에서 대상 행을 도출**(2026-07-18 교훈 적용).
+- ★고위험 저자정정(off-by-one 밀림 계속):
+  - **Groß 인용 독일어 단행본 3건이 통째로 von Rad로 복원**(A-09b, R1262~R1264 — MISSING_Groß는 'Pury'로 표기했으나 신명기 ATD8·Weisheit in Israel·Theologie des AT는 모두 Gerhard von Rad 저작. Pury는 신명기 주석을 쓴 바 없음)
+  - **Lenzi 2006 → Le Roux, Nicolas 2006**(A-07a, R915 — 앙리 3세 암살 연구 프랑스사 단행본. 아시리아학자 Lenzi와 무관)
+  - **Michalowski → Michel, Cécile 2건**(A-07c, R1046/R1047) · **Ogden → Olmo Lete 2건**(A-08c) · **Rippin→Römheld, Roje→Rofé 3건**(A-09c)
+  - **★원본 bib 자체가 틀린 사례 첫 확인**: R1144 "Neumann 2002 Taanach und Megiddo"는 bib_sasson·MISSING_Sasson **양쪽 원본에 모두 'Neumann'으로 오기**되어 있어 1단계만으로는 못 잡고 academia.edu 저자 업로드본에서만 발견(**Niemann, Hermann Michael**, VT 52). 2단계 외부 DB 검증이 장식이 아님을 반대 방향에서 입증.
+  - 기타: Persian 1998→Feldman, Nashville 1978→Vaux(도시명이 저자 자리), Oblata→Kupper(실재하지 않는 이름), Polzin 2003→Preuss 1971, Piter/Reni→Peter/René(애너그램형 OCR), Maier→Malamat 2건·Meier 1건, Milgrom→Miller, Mitchell→Mittmann, Mosis 1984→Mosca, Na'aman 2013→Nadali, Nelson 1994→Neudecker, Nabokoy→Nachmanides/Nabokov 분리, Hvidberg류 연도모순 2건(Parker 2003→1997, Rofé 1885→1982, Root 1994→1979).
+- 대시보드 자동빌드 정상(1912행). 다음: **A-10~A-12** (General·ANE, ~379행 잔여 — 시트 R1352~R1730)
 
 ### 2026-07-18 · 세션 12 (A-04/A-05/A-06 9분할 병렬 — 무인 예약 실행)
 - **A-04·A-05·A-06 (General·ANE, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → 서브에이전트 단계 434건 → **커맨더 교차중복 5건 병합 후 429건 신규 편입**. download_queue **1051 → 1480항목**. UNRESOLVED 20 → 29(+9).
