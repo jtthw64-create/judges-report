@@ -36,25 +36,41 @@ updated: 2026-07-13
 | 11 | A-07 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-07.csv (a/b/c 3분할 병합) |
 | 11 | A-08 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-08.csv (a/b/c 3분할 병합) |
 | 11 | A-09 | General·ANE | ~150 | DONE | 2026-07-19 | worklist/A-09.csv (a/b/c 3분할 병합) |
-| 11 | A-10 | General·ANE | ~150 | NEW | | |
-| 11 | A-11 | General·ANE | ~150 | NEW | | |
-| 11 | A-12 | General·ANE | ~79 | NEW | | |
+| 11 | A-10 | General·ANE | ~150 | DONE | 2026-07-20 | worklist/A-10.csv (a/b/c 3분할 병합) |
+| 11 | A-11 | General·ANE | ~150 | DONE | 2026-07-20 | worklist/A-11.csv (a/b/c 3분할 병합) |
+| 11 | A-12 | General·ANE | ~79 | DONE | 2026-07-20 | worklist/A-12.csv (a/b/c 3분할 병합) |
 
-**집계:** 완료 21 / 23청크 · 처리(원행) 2016 / 2395건 · download_queue **1912항목**(HELD_ALREADY 70 포함) · UNRESOLVED 31
+**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2277항목**(HELD_ALREADY 72 포함) · UNRESOLVED 35
 
 ## 다음 액션
-→ **A-10 (General·ANE, ~150건)** 정제. 이후 A-11·A-12까지가 마지막 잔여 배치(A-12만 ~79건, 시트 R1352~R1730). (`40_검증방법론.md` 절차 준수, Sonnet 서브에이전트 3분할 병렬 위임이 A-01~A-03에서도 잘 작동함 — 9서브에이전트 동시 실행)
-- ★**서브에이전트 위임 시 원본 bib 경로를 반드시 명시할 것**: `5 Book 3 Judges Resources/judges-index/extracted/`(작업폴더 하위 아님). 2026-07-17 세션에서 경로를 잘못 안내해 A-01c 담당이 1단계(원본 대조)를 통째로 생략하고 외부 DB만으로 확정 → 재작업으로 A등급 29→44 상향, UNRESOLVED 1건 해결. 40_검증방법론.md 9장 참조.
-- download_queue.csv 컬럼(17, 순서 고정): id,source_track,category,author,year,title,journal_series,boundary,priority,confidence,access_link,xlsx_ref,id_type,identifier,cited_by,status,notes
-- **status 값은 반드시 `QUEUED` 또는 `HELD_ALREADY`만 사용**(`RESOLVED` 금지). UNRESOLVED 항목은 `worklist/UNRESOLVED.csv`에만 넣고 본 청크 CSV에는 넣지 않는다(중복 금지).
-- 콤마 포함 필드는 반드시 큰따옴표. append 후 `python3 build_dashboard.py`.
-- GitHub repo 연결됨: https://github.com/jtthw64-create/judges-report (public). 매 배치 후 커밋+push.
-- 신규 청크마다 `40_검증방법론.md` 8절(원본폴더 확보완료 대조) 재실행 필수. **`download_queue.csv` 전체 갱신 후 `python3 worklist/held_audit.py`로 재점검**(8-5절 원칙).
-- **예약작업(14:00/09:00 KST) 충돌 주의**: 커맨더가 청크를 직접 처리할 땐 착수 즉시 `worklist/refinement_queue.md`의 해당 행 status를 `pending`이 아닌 값으로 바꿔 잠글 것(예: `in_progress(커맨더 세션, ...)`). 예약작업은 `status: pending`만 골라가므로 이렇게 하면 자동으로 건너뛴다.
+→ **정제 단계 전량 완료(2026-07-20).** 23/23 청크 done, 원행 2395건 전건 처리. 일일 정제 예약 스케줄(`judges-report-daily-refinement`)은 큐 소진에 따라 종료·삭제됨(2026-07-19 사용자 사전승인).
 
----
+**잔여 과제(사용자 지시 시 새 세션에서 착수)**
+1. **UNRESOLVED 35건 재식별** — OCR 손상으로 title 특정 실패. 주석서 3권 PDF 실물 참고문헌 대조가 필요(현 extracted/ 텍스트로는 복원 불가).
+2. **★boundary 과잉정정 의심 91건 판정** — 2026-07-20 전수 점검에서 `OT-검색바운더리.md` 표와 불일치 발견. 대부분 `통독 → 표적` 방향으로, 표상 **표적**인 UF·AYB·Hermeneia·HSM·ZDPV·JCS·JNES 등이 통독으로 올라가 있다. 2026-07-19 세션의 일괄 정정이 통독 쪽으로 과잉 적용된 것으로 보인다. **대량·되돌리기 어려운 변경이라 무인 회차에서 적용하지 않고 보류**했다. 점검 스크립트는 세션 스크래치패드에 있었으므로 재작성 필요(정규식은 표 전체를 기계적으로 옮기되, 아래 오탐군은 반드시 제외).
+   - 확인된 오탐군: `Göttingen:`(출판도시) · `Coniectanea Biblica`/`Biblica et Orientalia`(저널 Biblica 아님) · `Kurzgefasstes exegetisches Handbuch`/`Handkommentar zum AT`(Mohr HAT·Sellin KAT 아님) · `British School of Archaeology in Iraq`(저널 Iraq 아님) · `Anchor (Yale) Bible Reference Library`(사전류, AYB 주석 아님) · `Feminist Interpretation of the Bible` 등 제목 내 일반어 · `Studia Semitica Upsaliensia` · `Sheffield: JSOT Press` · `Subsidia/Analecta Biblica` · `JBL Monograph Series` · `Jewish Theological Seminary`.
+   - 3자 이하 약어(VT·AB·HS·ZA·RA·BN 등)는 **뒤에 권호 숫자나 풀네임 병기 괄호가 오는 서지 맥락에서만** 인정할 것. 단독 매칭은 오탐 폭증.
+3. **A-12c-003 후속** — R1712 Zadok 1988은 xlsx가 Sasson;Smith 공동인용으로 병합했으나, Smith가 실제 인용한 것은 동일저자·동일연도의 별개 논문(*Biblische Notizen* 42[1988]:44-48). 해당 문헌은 이번 청크 범위 밖이라 행 미생성 — 별도 편입 검토 필요.
+4. **실제 자료 수집** — download_queue 2277항목(QUEUED 2205) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
 
-## 세션 로그 (최신이 위로 append)
+### 2026-07-20 · 세션 14 (A-10/A-11/A-12 9분할 병렬 — 무인 예약 실행 · **큐 소진 최종 회차**)
+- **A-10·A-11·A-12 (General·ANE, R1352~R1730, 379행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 379행 → 서브에이전트 단계 371건 → UNRESOLVED 4건 격리 → **커맨더 교차중복 2건 병합 후 365건 신규 편입**. download_queue **1912 → 2277항목**. UNRESOLVED 31 → 35(+4).
+- 청크별: A-10 142건(A101/B27/C14, 병합 4) · A-11 145건(A77/B50/C18, 병합 3) · A-12 78건(A50/B20/C8, 병합 2, HELD 2).
+- **통합 단계 검사 3종 전부 통과**: 17컬럼 위반 0건(9개 CSV 및 최종 2277행) · 원행 커버리지 R1352~R1730 전건 1회씩(누락·중복 0) · HELD_ALREADY 72건 전건 `[확보완료:` 경로 보유.
+- **교차중복 2건 병합**(4회 연속 발생 — 서브에이전트는 자기 청크만 보므로 구조적으로 못 잡음):
+  - `A-10a-010` → `A-03c-013` (Ehrlich 1969 *Mikrâ ki-pheschutô* — 저자명 'Arnold B.' 보강 반영)
+  - `A-10c-025` → `B-03b-022` (Smend 1971 *Das Gesetz und die Völker* — **cited_by Groß → Groß;Smith 통합**, access_link를 ADW Göttingen 리포지토리 직링크로 교체)
+- **held_audit 전수 재실행(2277행)**: 후보 38건 전부 사람 눈 검증 → **신규 확정 0건**. 오탐 3건 판정 기록: `A-12c-002` Zakovitch 1981 *Woman's Rights* ≠ 파일 *Sisseras Tod*(동일저자·동일연도 별개 논문, 후자는 별도 HELD 처리됨) · `A-12c-012` Zerubavel 1995 ≠ `vanWolde 1995 Yael`(저자 상이, 'Yael' 토큰 오탐) · `D-01-003` Bal 1988 *Murder and Difference* ≠ *Death and Dissymmetry*(Bal의 1988년 별개 저작 2권).
+- **저자정정 주요 성과**(전부 원본 대조 + 외부 DB 교차확인):
+  - **`Strawn` → Sun Tzu** *The Art of War*(A-11a R1527) — MISSING_Sasson에도 동일 오염이 있었고 `bib_sasson.md` 정제본만 정확했음
+  - **`VanderKam` → Van Seters 4건**(A-11b R1595~R1598, *In Search of History* 등) · **`Tov` → Trebolle Barrera 2건**(DJD XIV 개별 항목 집필자 vs 볼륨 편집자 혼동, 원본 bib 자체 오류)
+  - **`Younger` → Zakovitch 3건**(A-12c R1706~R1708) · **`Snyman`→Soggin, `Stager`→Stamm 2건**(A-10c) · **`Winckler`→Winton Thomas / Winkler 분리**(A-12b)
+  - OCR 손상 복원: `Sttbap`→Seebass 3건 · `Wtippert`→Weippert 2건 · `Vtijola`→Veijola 3건 · `Trapper`→Tropper 4건 · `Ttta`→**Tita**(실존 인물 아님) · `Wlnin`→Wénin · `Smtnd`→Smend · `Vrits`→de Vries
+  - 연도 정정: Schorn 1957→**1997**(OCR 9→5) · Spieckermann 1984→1982 · Westenholz 1998→1997(Smith 원본 오류) · Wenham 1996→2000
+- **커맨더 정규화**: author 필드 메타표기 6건을 기존 관례 `이름 (추정)`로 통일. 그중 `Whiston, William(역)`은 저자·역자 뒤바뀜 실질 오류로 **`Josephus, Flavius (trans. William Whiston)`** 로 정정. boundary 빈값·'불명' 2건 → off-list.
+- **boundary**: 신규분 자동 후보 5건 중 **1건만 적용**(A-11a-022 AThANT → 통독). 나머지 4건은 오탐 판정(AYB *Reference Library*·*Hand*kommentar·게재처 "미상" 추정 2건). **기존 청크 91건은 과잉정정 의심으로 보류 — 위 「다음 액션」 2번 참조.**
+- **서브에이전트 공통 제약**: 9개 전부 세션 WebSearch 쿼터(200회)를 소진해 후반부는 WebFetch(Crossref·OpenLibrary·archive.org·Persée API)로 전환. C등급 40건은 대부분 이 한계에 기인하며 notes에 사유 명시됨.
+- 대시보드 자동빌드 정상(2277행). **정제 단계 전량 완료 — 예약 스케줄 종료.**
 
 ### 2026-07-19 · 세션 13 (A-07/A-08/A-09 9분할 병렬 — 무인 예약 실행)
 - **A-07·A-08·A-09 (General·ANE, R902~R1351, 450행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 450행 → 서브에이전트 단계 437건 → **커맨더 교차중복 5건 병합 후 432건 신규 편입**. download_queue **1480 → 1912항목**. UNRESOLVED 29 → 31(+2).

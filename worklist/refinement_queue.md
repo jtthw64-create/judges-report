@@ -1,7 +1,7 @@
 ---
 title: 정제 할일 큐 (일일 자동 진행용)
 type: queue
-updated: 2026-07-19
+updated: 2026-07-20
 ---
 
 # 정제 할일 큐
@@ -33,8 +33,8 @@ updated: 2026-07-19
 | 11 | A-07 | General·ANE | ~150 | done | 2026-07-19 |
 | 11 | A-08 | General·ANE | ~150 | done | 2026-07-19 |
 | 11 | A-09 | General·ANE | ~150 | done | 2026-07-19 |
-| 11 | A-10 | General·ANE | ~150 | pending | |
-| 11 | A-11 | General·ANE | ~150 | pending | |
-| 12 | A-12 | General·ANE | ~79 | pending | |
+| 11 | A-10 | General·ANE | ~150 | done | 2026-07-20 |
+| 11 | A-11 | General·ANE | ~150 | done | 2026-07-20 |
+| 12 | A-12 | General·ANE | ~79 | done | 2026-07-20 |
 
-남은 **3청크**(A-10~A-12). 하루 3청크 처리 시 1일(다음 회차) 완료 예상.
+**큐 소진 완료(2026-07-20).** 전 청크 done. 잔여 pending 0건 → 일일 정제 예약 스케줄 종료.
