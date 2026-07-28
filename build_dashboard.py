@@ -35,6 +35,7 @@ with open(CSV, encoding="utf-8") as f:
             "conf": conf, "au": r["author"], "yr": r["year"], "ti": r["title"], "js": js,
             "link": r["access_link"], "ref": r["xlsx_ref"], "status": status,
             "heldPath": held_path, "warn": warn, "info": info,
+            "jsRaw": (r.get("journal_series") or "").strip(), "idType": (r.get("id_type") or "").strip(),
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
@@ -105,6 +106,7 @@ TEMPLATE = r"""<!doctype html>
   .mbtn.on-prio{background:var(--gotink);color:#fff;border-color:var(--gotink)}
   .mbtn.on-skip{background:var(--sub);color:#fff}
   .mbtn.on-unavailable{background:var(--high);color:#fff;border-color:var(--high)}
+  .mbtn.cite-copy{margin-left:6px;vertical-align:middle}
   .pend{font-size:10px;color:var(--high);margin-top:2px}
   .ack{font-size:10px;color:var(--sub);display:flex;gap:4px;align-items:center;margin-top:3px}
   footer{margin-top:18px;color:var(--sub);font-size:12px}
@@ -300,6 +302,43 @@ function restoreFocusedTextarea(snapshot){
   }
 }
 
+function familyName(auRaw){
+  if(!auRaw) return "";
+  const multi=/;| and | & /i.test(auRaw);
+  let first=auRaw.split(/;| and | & /i)[0].trim();
+  first=first.replace(/\(eds?\.?\)/i,"").trim();
+  const fam=first.split(",")[0].trim();
+  return fam+(multi?" 외":"");
+}
+function shortTitle(ti){
+  if(!ti) return "";
+  const prefix=ti.split(":")[0].trim();
+  const words=prefix.split(/\s+/);
+  if(words.length>5) return words.slice(0,5).join(" ")+"...";
+  return prefix;
+}
+function buildCitation(d){
+  const fam=familyName(d.au);
+  const ti=shortTitle(d.ti);
+  const base=`${fam}, ${d.yr}, ${ti}`;
+  const idt=(d.idType||"").toLowerCase();
+  const isJournal=/article|journal/.test(idt);
+  if(isJournal&&d.jsRaw) return `${base}, ${d.jsRaw}`;
+  return base;
+}
+function copyCitation(id){
+  const d=DATA.find(x=>x.id===id);
+  if(!d) return;
+  const text=buildCitation(d);
+  const btn=document.getElementById("cite_"+id);
+  const done=()=>{ if(btn){ const orig=btn.textContent; btn.textContent="복사됨"; setTimeout(()=>{btn.textContent=orig;},1200);} };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{ prompt("인용문 복사(Ctrl/Cmd+C):",text); });
+  }else{
+    prompt("인용문 복사(Ctrl/Cmd+C):",text);
+  }
+}
+
 function render(){
   const focusedTextarea=captureFocusedTextarea();
   const q=(document.getElementById("q").value||"").toLowerCase();
@@ -342,7 +381,7 @@ function render(){
     const pf=prof[d.id]||{};
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr}</div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="인용문 복사">📋 인용</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="author-cell">${d.au}</td>
       <td class="cite">${d.js}</td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
