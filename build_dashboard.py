@@ -13,6 +13,45 @@ SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_W
 
 WARN_KW = ["정정", "난이도", "미상", "확인요"]
 
+# 인용 복사 기능: 저널·시리즈명 SBL 약어 조회 (pdf-rename 스킬 규칙 참고, ../rename-pdf 폴더의
+# 참고용 약어표를 빌드 시점에만 읽는다 — 이 judges report 저장소에는 커밋하지 않음).
+def _parse_abbrev_table(path, start_marker=None, stop_marker=None):
+    out = {}
+    if not os.path.exists(path):
+        return out
+    active = start_marker is None
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if start_marker and start_marker in line:
+                active = True
+                continue
+            if stop_marker and stop_marker in line:
+                break  # 8.4.2(약어→풀네임 역방향 표) 등 방향이 반대인 섹션은 제외
+            if not active:
+                continue
+            line = line.strip()
+            if not (line.startswith("|") and line.endswith("|")):
+                continue
+            parts = [p.strip() for p in line.strip("|").split("|")]
+            if len(parts) != 2:
+                continue
+            full, abbr = parts
+            if not full or not abbr:
+                continue
+            if full.lower() in ("full name", "full name / source"):
+                continue
+            if set(full) <= set("-: "):
+                continue
+            if len(abbr) > 25 or len(abbr.split()) > 4 or re.match(r"^\d", abbr):
+                continue  # PDF 추출 줄바꿈 깨짐으로 인한 오염 행 제외
+            out.setdefault(full.lower(), abbr)
+    return out
+
+_RENAME_PDF_DIR = os.path.join(os.path.dirname(HERE), "rename-pdf")
+JOURNAL_ABBR = _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "OT_Journal_Abbreviations.md"))
+for _k, _v in _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "abbreviations.md"), start_marker="### 8.4.1", stop_marker="### 8.4.2").items():
+    JOURNAL_ABBR.setdefault(_k, _v)
+
 rows = []
 with open(CSV, encoding="utf-8") as f:
     for r in csv.DictReader(f):
@@ -37,6 +76,7 @@ with open(CSV, encoding="utf-8") as f:
             "heldPath": held_path, "warn": warn, "info": info,
             "jsRaw": (r.get("journal_series") or "").strip(), "idType": (r.get("id_type") or "").strip(),
             "identifier": (r.get("identifier") or "").strip(),
+            "jsCite": JOURNAL_ABBR.get((r.get("journal_series") or "").strip().lower(), (r.get("journal_series") or "").strip()),
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
@@ -345,13 +385,13 @@ function buildCitation(d){
   const isJournal=/article|journal/.test(idt);
   const isChapter=/chapter/.test(idt);
   const pageLike=/^[0-9]+[–-][0-9]+$/.test((d.identifier||"").trim());
-  if(isJournal&&d.jsRaw){
-    let extra=d.jsRaw;
+  if(isJournal&&d.jsCite){
+    let extra=d.jsCite;
     if(pageLike) extra+=`, ${d.identifier.trim()}`;
     return `${base}_${extra}`;
   }
-  if(isChapter&&d.jsRaw){
-    let extra=d.jsRaw;
+  if(isChapter&&d.jsCite){
+    let extra=d.jsCite;
     if(pageLike) extra+=`. ${d.identifier.trim()}`;
     return `${base}_${extra}`;
   }
