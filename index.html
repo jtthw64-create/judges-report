@@ -280,14 +280,22 @@ function formatAuthors(auRaw,kr){
   if(s.length===3) return `${s[0]}, ${s[1]}, ${s[2]}`;
   return kr?`${s[0]} 등`:`${s[0]} et al.`;
 }
+const STOPWORDS=new Set(["a","an","the","of","in","on","to","for","with","and","or","but","by","from","at","as","into","onto","within","without","between","among","under","over","about","after","before","during","is","are","en","de","du","des","la","le","les","van","von","der","und"]);
 function shortTitle(ti){
   if(!ti) return "";
   const prefix=ti.split(":")[0].trim();
   const kr=isKoreanText(prefix);
   if(kr) return prefix;
-  const words=prefix.split(/\s+/);
-  if(/^(A|An|The)$/i.test(words[0])) return words.slice(1).join(" ");
-  return prefix;
+  let words=prefix.split(/\s+/);
+  if(/^(A|An|The)$/i.test(words[0])) words=words.slice(1);
+  const contentCount=words.filter(w=>!STOPWORDS.has(w.toLowerCase())).length;
+  if(contentCount<=5) return words.join(" ");
+  let seen=0,cut=words.length;
+  for(let i=0;i<words.length;i++){
+    if(!STOPWORDS.has(words[i].toLowerCase())) seen++;
+    if(seen===5){ cut=i+1; break; }
+  }
+  return words.slice(0,cut).join(" ");
 }
 function buildCitation(d){
   const kr=isKoreanText(d.ti)||isKoreanText(d.au);
