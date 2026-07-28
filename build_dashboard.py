@@ -36,6 +36,7 @@ with open(CSV, encoding="utf-8") as f:
             "link": r["access_link"], "ref": r["xlsx_ref"], "status": status,
             "heldPath": held_path, "warn": warn, "info": info,
             "jsRaw": (r.get("journal_series") or "").strip(), "idType": (r.get("id_type") or "").strip(),
+            "identifier": (r.get("identifier") or "").strip(),
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
@@ -302,25 +303,58 @@ function restoreFocusedTextarea(snapshot){
   }
 }
 
-function familyName(auRaw){
-  if(!auRaw) return "";
-  const multi=/;| and | & /i.test(auRaw);
-  let first=auRaw.split(/;| and | & /i)[0].trim();
-  first=first.replace(/\(eds?\.?\)/i,"").trim();
-  const fam=first.split(",")[0].trim();
-  return fam+(multi?" 외":"");
+function isKoreanText(s){
+  if(!s) return false;
+  const hangul=(s.match(/[가-힣]/g)||[]).length;
+  return hangul/s.length>=0.05;
+}
+function authorSurnames(auRaw){
+  if(!auRaw) return [];
+  const cleaned=auRaw.replace(/\(eds?\.?\)/gi,"").trim();
+  const parts=cleaned.split(/;| and | & /i).map(p=>p.trim()).filter(Boolean);
+  return parts.map(p=>{
+    if(p.includes(",")) return p.split(",")[0].trim();
+    const toks=p.split(/\s+/);
+    return toks[toks.length-1];
+  });
+}
+function formatAuthors(auRaw,kr){
+  const s=authorSurnames(auRaw);
+  if(s.length===0) return kr?"[저자미확인]":"[Author unknown]";
+  if(s.length===1) return s[0];
+  if(s.length===2) return kr?`${s[0]}, ${s[1]}`:`${s[0]} and ${s[1]}`;
+  if(s.length===3) return `${s[0]}, ${s[1]}, ${s[2]}`;
+  return kr?`${s[0]} 등`:`${s[0]} et al.`;
 }
 function shortTitle(ti){
   if(!ti) return "";
-  return ti.split(":")[0].trim();
+  const prefix=ti.split(":")[0].trim();
+  const kr=isKoreanText(prefix);
+  let words=prefix.split(/\s+/);
+  const limit=kr?10:5;
+  if(words.length<=limit) return prefix;
+  if(!kr&&/^(A|An|The)$/i.test(words[0])) words=words.slice(1);
+  return words.slice(0,5).join(" ");
 }
 function buildCitation(d){
-  const fam=familyName(d.au);
+  const kr=isKoreanText(d.ti)||isKoreanText(d.au);
+  const author=formatAuthors(d.au,kr);
   const ti=shortTitle(d.ti);
-  const base=`${fam}, ${d.yr}, ${ti}`;
+  const base=`${author} (${d.yr}) ${ti}`;
   const idt=(d.idType||"").toLowerCase();
   const isJournal=/article|journal/.test(idt);
-  if(isJournal&&d.jsRaw) return `${base}, ${d.jsRaw}`;
+  const isChapter=/chapter/.test(idt);
+  const pageLike=/^[0-9]+[–-][0-9]+$/.test((d.identifier||"").trim());
+  if(isJournal&&d.jsRaw){
+    let extra=d.jsRaw;
+    if(pageLike) extra+=`, ${d.identifier.trim()}`;
+    return `${base}_${extra}`;
+  }
+  if(isChapter&&d.jsRaw){
+    let extra=d.jsRaw;
+    if(pageLike) extra+=`. ${d.identifier.trim()}`;
+    return `${base}_${extra}`;
+  }
   return base;
 }
 function copyCitation(id){
