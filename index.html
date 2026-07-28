@@ -267,10 +267,7 @@ function familyName(auRaw){
 }
 function shortTitle(ti){
   if(!ti) return "";
-  const prefix=ti.split(":")[0].trim();
-  const words=prefix.split(/\s+/);
-  if(words.length>5) return words.slice(0,5).join(" ")+"...";
-  return prefix;
+  return ti.split(":")[0].trim();
 }
 function buildCitation(d){
   const fam=familyName(d.au);
