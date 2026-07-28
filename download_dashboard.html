@@ -284,11 +284,10 @@ function shortTitle(ti){
   if(!ti) return "";
   const prefix=ti.split(":")[0].trim();
   const kr=isKoreanText(prefix);
-  let words=prefix.split(/\s+/);
-  const limit=kr?10:5;
-  if(words.length<=limit) return prefix;
-  if(!kr&&/^(A|An|The)$/i.test(words[0])) words=words.slice(1);
-  return words.slice(0,5).join(" ");
+  if(kr) return prefix;
+  const words=prefix.split(/\s+/);
+  if(/^(A|An|The)$/i.test(words[0])) return words.slice(1).join(" ");
+  return prefix;
 }
 function buildCitation(d){
   const kr=isKoreanText(d.ti)||isKoreanText(d.au);
