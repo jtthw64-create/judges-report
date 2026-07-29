@@ -47,6 +47,21 @@ def _parse_abbrev_table(path, start_marker=None, stop_marker=None):
             out.setdefault(full.lower(), abbr)
     return out
 
+def _resolve_journal_cite(js_raw, table):
+    js_raw = (js_raw or "").strip()
+    if not js_raw:
+        return js_raw
+    if js_raw.lower() in table:
+        return table[js_raw.lower()]
+    # "Full Name (ABBR)"처럼 이미 약어가 괄호로 병기된 경우: 괄호 앞부분으로 재조회해
+    # 표에 있으면 약어만 남기고(풀네임+약어 중복 방지), 없으면 원문 그대로 둔다.
+    m = re.match(r"^(.*\S)\s*\(([^()]+)\)\s*$", js_raw)
+    if m:
+        base_key = m.group(1).strip().lower()
+        if base_key in table:
+            return table[base_key]
+    return js_raw
+
 _RENAME_PDF_DIR = os.path.join(os.path.dirname(HERE), "rename-pdf")
 JOURNAL_ABBR = _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "OT_Journal_Abbreviations.md"))
 for _k, _v in _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "abbreviations.md"), start_marker="### 8.4.1", stop_marker="### 8.4.2").items():
@@ -76,7 +91,7 @@ with open(CSV, encoding="utf-8") as f:
             "heldPath": held_path, "warn": warn, "info": info,
             "jsRaw": (r.get("journal_series") or "").strip(), "idType": (r.get("id_type") or "").strip(),
             "identifier": (r.get("identifier") or "").strip(),
-            "jsCite": JOURNAL_ABBR.get((r.get("journal_series") or "").strip().lower(), (r.get("journal_series") or "").strip()),
+            "jsCite": _resolve_journal_cite(r.get("journal_series"), JOURNAL_ABBR),
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
