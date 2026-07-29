@@ -402,7 +402,7 @@ function buildCitation(d){
   const kr=isKoreanText(d.ti)||isKoreanText(d.au);
   const author=formatAuthors(d.au,kr);
   const ti=shortTitle(d.ti);
-  const base=`${author} (${d.yr}) ${ti}`;
+  const base=`${author} ${d.yr} ${ti}`;
   const idt=(d.idType||"").toLowerCase();
   const isJournal=/article|journal/.test(idt);
   const isChapter=/chapter/.test(idt);
