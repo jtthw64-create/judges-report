@@ -411,9 +411,9 @@ function copyCitation(id){
   const btn=document.getElementById("cite_"+id);
   const done=()=>{ if(btn){ const orig=btn.textContent; btn.textContent="복사됨"; setTimeout(()=>{btn.textContent=orig;},1200);} };
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(done).catch(()=>{ prompt("인용문 복사(Ctrl/Cmd+C):",text); });
+    navigator.clipboard.writeText(text).then(done).catch(()=>{ prompt("파일명 복사(Ctrl/Cmd+C):",text); });
   }else{
-    prompt("인용문 복사(Ctrl/Cmd+C):",text);
+    prompt("파일명 복사(Ctrl/Cmd+C):",text);
   }
 }
 
@@ -459,7 +459,7 @@ function render(){
     const pf=prof[d.id]||{};
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="인용문 복사">📋 인용</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="파일명 규칙으로 복사">📋 파일명</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="author-cell">${d.au}</td>
       <td class="cite">${d.js}</td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
