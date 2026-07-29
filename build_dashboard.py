@@ -47,25 +47,41 @@ def _parse_abbrev_table(path, start_marker=None, stop_marker=None):
             out.setdefault(full.lower(), abbr)
     return out
 
-def _resolve_journal_cite(js_raw, table):
+def _resolve_journal_cite(js_raw, table, sorted_items):
     js_raw = (js_raw or "").strip()
     if not js_raw:
         return js_raw
-    if js_raw.lower() in table:
-        return table[js_raw.lower()]
+    low = js_raw.lower()
+    if low in table:
+        return table[low]
     # "Full Name (ABBR)"처럼 이미 약어가 괄호로 병기된 경우: 괄호 앞부분으로 재조회해
-    # 표에 있으면 약어만 남기고(풀네임+약어 중복 방지), 없으면 원문 그대로 둔다.
+    # 표에 있으면 약어로 치환. 괄호 내용이 약어 자체와 같으면 중복이므로 버리고,
+    # "(추정)"·"(FS ...)"처럼 약어가 아닌 부가설명이면 정보 손실 없이 그대로 보존한다.
     m = re.match(r"^(.*\S)\s*\(([^()]+)\)\s*$", js_raw)
     if m:
         base_key = m.group(1).strip().lower()
         if base_key in table:
-            return table[base_key]
+            abbr = table[base_key]
+            paren = m.group(2).strip()
+            if paren.lower() == abbr.lower():
+                return abbr
+            return f"{abbr} ({paren})"
+    # 저널 풀네임 뒤에 권호·쪽수 등이 그대로 붙어 있는 경우(예: "Zeitschrift für die
+    # alttestamentliche Wissenschaft 104/2 (1992): 202–216") — 문자열 맨 앞이 표의
+    # 풀네임과 일치하면 그 부분만 약어로 치환하고 나머지(권호·쪽수)는 그대로 둔다.
+    # 긴 이름부터 시도해 짧은 이름의 우연한 부분일치를 방지한다.
+    for full, abbr in sorted_items:
+        if low.startswith(full):
+            rest = js_raw[len(full):].lstrip()
+            rest = re.sub(rf"^\(\s*{re.escape(abbr)}\s*\)\s*", "", rest, flags=re.IGNORECASE)
+            return (abbr + (" " + rest if rest else "")).strip()
     return js_raw
 
 _RENAME_PDF_DIR = os.path.join(os.path.dirname(HERE), "rename-pdf")
 JOURNAL_ABBR = _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "OT_Journal_Abbreviations.md"))
 for _k, _v in _parse_abbrev_table(os.path.join(_RENAME_PDF_DIR, "abbreviations.md"), start_marker="### 8.4.1", stop_marker="### 8.4.2").items():
     JOURNAL_ABBR.setdefault(_k, _v)
+_JOURNAL_ABBR_SORTED = sorted(JOURNAL_ABBR.items(), key=lambda kv: -len(kv[0]))
 
 rows = []
 with open(CSV, encoding="utf-8") as f:
@@ -91,7 +107,7 @@ with open(CSV, encoding="utf-8") as f:
             "heldPath": held_path, "warn": warn, "info": info,
             "jsRaw": (r.get("journal_series") or "").strip(), "idType": (r.get("id_type") or "").strip(),
             "identifier": (r.get("identifier") or "").strip(),
-            "jsCite": _resolve_journal_cite(r.get("journal_series"), JOURNAL_ABBR),
+            "jsCite": _resolve_journal_cite(r.get("journal_series"), JOURNAL_ABBR, _JOURNAL_ABBR_SORTED),
         })
 
 op = {"high": 0, "mid": 1, "low": 2}
