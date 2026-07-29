@@ -17,6 +17,13 @@ def norm(s):
 def tokens(s):
     return set(re.findall(r"[a-z]{4,}", norm(s))) - STOPWORDS
 
+def letters_only(s):
+    # 아포스트로피(Na'aman)·하이픈(Niesiołowski-Spanò)·NFKD로 분해 안 되는 확장 라틴 문자
+    # (ł, đ 등)까지 포함해 성(姓)과 파일명을 "글자만 이어붙인 문자열"로 동일하게 정규화한다.
+    # 예전 버전은 [A-Za-zÀ-ÿ'-] 문자클래스가 Latin-1 범위 밖 문자(ł 등)를 통째로 버려
+    # Na'aman/Niesiołowski처럼 아포스트로피·확장 라틴 문자가 있는 성을 매칭하지 못했다.
+    return re.sub(r"[^a-z]", "", norm(s))
+
 def surnames(author_field):
     # split on common separators, take first token of each chunk as surname candidate
     parts = re.split(r"[,&;]| and | und ", author_field)
@@ -26,9 +33,9 @@ def surnames(author_field):
         if not p:
             continue
         first_word = re.split(r"[\s\(]", p)[0]
-        first_word = re.sub(r"[^A-Za-zÀ-ÿ'-]", "", first_word)
-        if len(first_word) >= 3:
-            names.append(norm(first_word))
+        cleaned = letters_only(first_word)
+        if len(cleaned) >= 3:
+            names.append(cleaned)
     return names
 
 # gather all original files
@@ -62,9 +69,10 @@ for r in queued:
         fn_norm = norm(fn)
         if year not in fn_norm:
             continue
-        # word-boundary surname match
-        fn_words = set(re.findall(r"[a-z]{3,}", fn_norm))
-        if not any(sn in fn_words for sn in snames):
+        # 부분문자열 매칭: 성에 아포스트로피·하이픈·확장 라틴 문자가 있어도
+        # 파일명 쪽 글자만 이어붙인 문자열에 포함되는지로 판단(단어경계 의존 안 함)
+        fn_letters = letters_only(fn)
+        if not any(sn in fn_letters for sn in snames):
             continue
         ftoks = tokens(fn)
         score = len(tset & ftoks)
