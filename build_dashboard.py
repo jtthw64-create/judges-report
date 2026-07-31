@@ -232,6 +232,8 @@ TEMPLATE = r"""<!doctype html>
   <div class="stats" id="stats"></div>
   <h2 class="sec">카테고리</h2>
   <div class="cats" id="cats"></div>
+  <h2 class="sec">자료 종류</h2>
+  <div class="cats" id="types"></div>
   <div class="bar">
     <input id="q" placeholder="검색 (저자·제목·저널)…" oninput="render()">
     <button id="fAll" onclick="setF({type:'all'})">전체</button>
@@ -448,6 +450,15 @@ function copyCitation(id){
   }
 }
 
+function resourceTypeBucket(idType){
+  const t=(idType||"").toLowerCase().trim();
+  if(["journal-ref","article","journal-article","ref-article","review"].includes(t)) return "저널논문";
+  if(["book","isbn"].includes(t)) return "단행본";
+  if(["book-chapter","book chapter","chapter"].includes(t)) return "북챕터";
+  if(["dissertation","thesis"].includes(t)) return "학위논문";
+  if(["dictionary entry","dictionary-entry","dictionary","dictionary-article"].includes(t)) return "사전·참고자료";
+  return "기타";
+}
 function render(){
   const focusedTextarea=captureFocusedTextarea();
   const q=(document.getElementById("q").value||"").toLowerCase();
@@ -468,6 +479,7 @@ function render(){
     if(filter.type==="held"&&d.status!=="HELD_ALREADY")return false;
     if(filter.type==="unavailable"&&!unavailable[d.id])return false;
     if(filter.type==="category"&&d.cat!==filter.value)return false;
+    if(filter.type==="restype"&&resourceTypeBucket(d.idType)!==filter.value)return false;
     if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
     if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return false;
     if(filter.type==="got"&&!got[d.id])return false;
@@ -550,6 +562,17 @@ function render(){
   ).join("");
   [...catsEl.children].forEach((el,i)=>{
     el.onclick=()=>setF(filter.type==='category'&&filter.value===cats[i] ? {type:'all'} : {type:'category',value:cats[i]});
+  });
+
+  const typeCounts={};
+  DATA.forEach(d=>{const b=resourceTypeBucket(d.idType);typeCounts[b]=(typeCounts[b]||0)+1;});
+  const types=Object.keys(typeCounts).sort((a,b)=>typeCounts[b]-typeCounts[a]);
+  const typesEl=document.getElementById("types");
+  typesEl.innerHTML = types.map((t,i)=>
+    `<div class="cat ${filter.type==='restype'&&filter.value===t?'active':''}" data-idx="${i}"><b>${typeCounts[t]}</b>${t}</div>`
+  ).join("");
+  [...typesEl.children].forEach((el,i)=>{
+    el.onclick=()=>setF(filter.type==='restype'&&filter.value===types[i] ? {type:'all'} : {type:'restype',value:types[i]});
   });
 }
 render();
