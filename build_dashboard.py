@@ -134,6 +134,7 @@ TEMPLATE = r"""<!doctype html>
   .stat.click{cursor:pointer}.stat.click:hover{border-color:var(--accent)}
   .stat.alert{border-color:var(--high)}.stat.alert b{color:var(--high)}
   .stat.active{border-color:var(--accent);border-width:2px}
+  .scope-label{font-size:12px;color:var(--sub);margin:2px 0 8px}
   .cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
   .cat{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
   .cat b{margin-right:5px}
@@ -230,16 +231,18 @@ TEMPLATE = r"""<!doctype html>
   <h1>📥 Judges 자료 다운로드 대장</h1>
   <div class="meta">Track 1 (미보유 확정) · 정본 <code>worklist/download_queue.csv</code> 자동생성</div>
   <div class="stats" id="stats"></div>
+  <div class="scope-label" id="scopeLabel"></div>
+  <div class="stats" id="catstats"></div>
   <h2 class="sec">카테고리</h2>
   <div class="cats" id="cats"></div>
   <h2 class="sec">자료 종류</h2>
   <div class="cats" id="types"></div>
   <div class="bar">
     <input id="q" placeholder="검색 (저자·제목·저널)…" oninput="render()">
-    <button id="fAll" onclick="setF({type:'all'})">전체</button>
-    <button id="fMajor" onclick="setF({type:'bd',value:'통독'})">Major</button>
-    <button id="fSecondary" onclick="setF({type:'bd',value:'표적'})">Secondary</button>
-    <button id="fTodo" onclick="setF({type:'todo'})">미수령만</button>
+    <button id="fAll" onclick="setStatus({type:'all'})">전체</button>
+    <button id="fMajor" onclick="setStatus({type:'bd',value:'통독'})">Major</button>
+    <button id="fSecondary" onclick="setStatus({type:'bd',value:'표적'})">Secondary</button>
+    <button id="fTodo" onclick="setStatus({type:'todo'})">미수령만</button>
     <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
@@ -269,7 +272,9 @@ let bdHistory=JSON.parse(localStorage.getItem(KEY_BD_HIST)||"[]");
 let reclass=JSON.parse(localStorage.getItem(KEY_RECLASS)||"{}");
 let prof=JSON.parse(localStorage.getItem(KEY_PROF)||"{}");
 let unavailable=JSON.parse(localStorage.getItem(KEY_UNAVAILABLE)||"{}");
-let filter={type:"all"};
+let statusFilter={type:"all"};
+let catFilter=null;
+let typeFilter=null;
 let authorSort=null;
 document.getElementById("syncNote").textContent = SHEETS_ENDPOINT ? "" : " (⚠ 서버 미연결 — 이 기기에만 저장됨)";
 
@@ -285,7 +290,7 @@ function save(){
   localStorage.setItem(KEY_PROF,JSON.stringify(prof));
   localStorage.setItem(KEY_UNAVAILABLE,JSON.stringify(unavailable));
 }
-function setF(f){filter=f;render()}
+function setStatus(f){statusFilter=f;render()}
 function toggleAuthorSort(){authorSort=authorSort==="asc"?"desc":"asc";render()}
 function toggle(id){got[id]=!got[id];save();syncToBackend("got",{id,got:got[id]});render()}
 function toggleUnavailable(id){
@@ -466,24 +471,24 @@ function render(){
   document.getElementById("authorSortMark").textContent=authorSort==="asc"?"▲":authorSort==="desc"?"▼":"⇅";
   authorHead.setAttribute("aria-sort",authorSort==="asc"?"ascending":authorSort==="desc"?"descending":"none");
   ["fAll","fMajor","fSecondary","fTodo"].forEach(x=>document.getElementById(x).classList.remove("active"));
-  if(filter.type==="all")document.getElementById("fAll").classList.add("active");
-  if(filter.type==="bd"&&filter.value==="통독")document.getElementById("fMajor").classList.add("active");
-  if(filter.type==="bd"&&filter.value==="표적")document.getElementById("fSecondary").classList.add("active");
-  if(filter.type==="todo")document.getElementById("fTodo").classList.add("active");
+  if(statusFilter.type==="all")document.getElementById("fAll").classList.add("active");
+  if(statusFilter.type==="bd"&&statusFilter.value==="통독")document.getElementById("fMajor").classList.add("active");
+  if(statusFilter.type==="bd"&&statusFilter.value==="표적")document.getElementById("fSecondary").classList.add("active");
+  if(statusFilter.type==="todo")document.getElementById("fTodo").classList.add("active");
 
   const rows=document.getElementById("rows");rows.innerHTML="";
   const visible=DATA.filter(d=>{
     const bd=effBd(d);
-    if(filter.type==="bd"&&bd!==filter.value)return false;
-    if(filter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
-    if(filter.type==="held"&&d.status!=="HELD_ALREADY")return false;
-    if(filter.type==="unavailable"&&!unavailable[d.id])return false;
-    if(filter.type==="category"&&d.cat!==filter.value)return false;
-    if(filter.type==="restype"&&resourceTypeBucket(d.idType)!==filter.value)return false;
-    if(filter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
-    if(filter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return false;
-    if(filter.type==="got"&&!got[d.id])return false;
-    if(filter.type==="conf"&&d.conf!==filter.value)return false;
+    if(catFilter&&d.cat!==catFilter)return false;
+    if(typeFilter&&resourceTypeBucket(d.idType)!==typeFilter)return false;
+    if(statusFilter.type==="bd"&&bd!==statusFilter.value)return false;
+    if(statusFilter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
+    if(statusFilter.type==="held"&&d.status!=="HELD_ALREADY")return false;
+    if(statusFilter.type==="unavailable"&&!unavailable[d.id])return false;
+    if(statusFilter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
+    if(statusFilter.type==="prof"&&!(prof[d.id]&&(prof[d.id].comment||prof[d.id].choice)&&!prof[d.id].ack))return false;
+    if(statusFilter.type==="got"&&!got[d.id])return false;
+    if(statusFilter.type==="conf"&&d.conf!==statusFilter.value)return false;
     if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return false;
     return true;
   });
@@ -545,12 +550,41 @@ function render(){
     {type:"prof",label:"코멘트 미확인",n:profUnread,alert:!!profUnread},
   ];
   document.getElementById("stats").innerHTML=statDefs.map((s,i)=>{
-    const isActive=filter.type===s.type&&(s.value===undefined||filter.value===s.value);
+    const isActive=statusFilter.type===s.type&&(s.value===undefined||statusFilter.value===s.value);
     return `<div class="stat click ${s.alert?'alert':''} ${isActive?'active':''}" data-si="${i}"><b>${s.n}</b><span>${s.label}</span></div>`;
   }).join("") + `<div class="stat"><b>${shown}</b><span>표시중</span></div>`;
   [...document.getElementById("stats").children].slice(0,statDefs.length).forEach((el,i)=>{
     const s=statDefs[i];
-    el.onclick=()=>setF(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
+    el.onclick=()=>setStatus(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
+  });
+
+  // 선택된 카테고리·자료종류 범위 안에서의 상태별 세부 현황(상태 필터와 독립적으로 항상 전체 상태를 보여줌 — 카테고리+상태 동시 적용 가능)
+  const scoped=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||resourceTypeBucket(d.idType)===typeFilter));
+  const sTotal=scoped.length;
+  const sDone=scoped.filter(d=>got[d.id]).length;
+  const sHeld=scoped.filter(d=>d.status==="HELD_ALREADY").length;
+  const sUnavail=scoped.filter(d=>unavailable[d.id]).length;
+  const sTodo=scoped.filter(d=>!got[d.id]&&!unavailable[d.id]&&d.status!=="HELD_ALREADY").length;
+  const sReclass=scoped.filter(d=>reclass[d.id]&&reclass[d.id].status==="pending").length;
+  const scopeStatDefs=[
+    {type:"all",label:"범위 전체",n:sTotal},
+    {type:"got",label:"받음 ✔",n:sDone},
+    {type:"todo",label:"미수령",n:sTodo},
+    {type:"held",label:"확보완료",n:sHeld},
+    {type:"unavailable",label:"확보불가",n:sUnavail},
+    {type:"reclass",label:"재검토 대기",n:sReclass,alert:!!sReclass},
+  ];
+  const scopeParts=[];
+  if(catFilter)scopeParts.push(catFilter);
+  if(typeFilter)scopeParts.push(typeFilter);
+  document.getElementById("scopeLabel").textContent=`현재 범위: ${scopeParts.length?scopeParts.join(" · "):"전체"} (${sTotal}건) — 아래 배지를 눌러 이 범위 안에서 상태로 다시 좁힐 수 있습니다`;
+  document.getElementById("catstats").innerHTML=scopeStatDefs.map((s,i)=>{
+    const isActive=statusFilter.type===s.type&&(s.value===undefined||statusFilter.value===s.value);
+    return `<div class="stat click ${s.alert?'alert':''} ${isActive?'active':''}" data-si="${i}"><b>${s.n}</b><span>${s.label}</span></div>`;
+  }).join("");
+  [...document.getElementById("catstats").children].forEach((el,i)=>{
+    const s=scopeStatDefs[i];
+    el.onclick=()=>setStatus(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
   });
 
   const catCounts={};
@@ -558,10 +592,10 @@ function render(){
   const cats=Object.keys(catCounts).sort((a,b)=>catCounts[b]-catCounts[a]);
   const catsEl=document.getElementById("cats");
   catsEl.innerHTML = cats.map((c,i)=>
-    `<div class="cat ${filter.type==='category'&&filter.value===c?'active':''}" data-idx="${i}"><b>${catCounts[c]}</b>${c}</div>`
+    `<div class="cat ${catFilter===c?'active':''}" data-idx="${i}"><b>${catCounts[c]}</b>${c}</div>`
   ).join("");
   [...catsEl.children].forEach((el,i)=>{
-    el.onclick=()=>setF(filter.type==='category'&&filter.value===cats[i] ? {type:'all'} : {type:'category',value:cats[i]});
+    el.onclick=()=>{catFilter=(catFilter===cats[i])?null:cats[i];render();};
   });
 
   const typeCounts={};
@@ -569,10 +603,10 @@ function render(){
   const types=Object.keys(typeCounts).sort((a,b)=>typeCounts[b]-typeCounts[a]);
   const typesEl=document.getElementById("types");
   typesEl.innerHTML = types.map((t,i)=>
-    `<div class="cat ${filter.type==='restype'&&filter.value===t?'active':''}" data-idx="${i}"><b>${typeCounts[t]}</b>${t}</div>`
+    `<div class="cat ${typeFilter===t?'active':''}" data-idx="${i}"><b>${typeCounts[t]}</b>${t}</div>`
   ).join("");
   [...typesEl.children].forEach((el,i)=>{
-    el.onclick=()=>setF(filter.type==='restype'&&filter.value===types[i] ? {type:'all'} : {type:'restype',value:types[i]});
+    el.onclick=()=>{typeFilter=(typeFilter===types[i])?null:types[i];render();};
   });
 }
 render();
