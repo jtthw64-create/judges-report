@@ -75,6 +75,7 @@ node --check /tmp/dash.js && echo OK
     - `reclass`: field1=사용자 코멘트, field2=status("pending"/"ai_reviewed"), field3=AI 검토결과 텍스트
     - `prof`: field1=choice("prio"/"skip"/""), field2=코멘트
     - `unavailable`: field1 = "true"/"false" (확보불가 표시, WO-003)
+    - `restype_change`: field1=이전 자료종류, field2=새 자료종류(또는 `"__revert_to_original__"`=복원) — 자료종류(저널논문/단행본/북챕터/학위논문/사전·참고자료/기타) 수동 재분류, 2026-08-01 추가·배포(버전 4)
 
 - Apps Script 프로젝트(이 Sheet에 바인딩됨):
   - 프로젝트 URL: `https://script.google.com/u/0/home/projects/1K8qQFCWPxUjVkE9b-R0DJojFIvYuW3ci_2kh4Kor7Gk5wcpOr7mr3doa/edit`
