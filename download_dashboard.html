@@ -164,6 +164,10 @@ let restypeOverride=JSON.parse(localStorage.getItem(KEY_RESTYPE)||"{}");
 let statusFilter={type:"all"};
 let catFilter=null;
 let typeFilter=null;
+// 자료종류 필터가 걸린 상태에서 그 행의 종류를 바꾸면 즉시 필터 밖으로 밀려나 행이 사라진다.
+// 방금 사용자가 손댄 행은 필터를 무시하고 계속 보여줘서, 원하는 종류에 닿을 때까지 연속 클릭할 수 있게 한다.
+// 필터·검색을 새로 조작하면 비운다.
+let recentRestype=new Set();
 let authorSort=null;
 document.getElementById("syncNote").textContent = SHEETS_ENDPOINT ? "" : " (⚠ 서버 미연결 — 이 기기에만 저장됨)";
 
@@ -208,13 +212,19 @@ function effRestype(d){return restypeOverride[d.id]||resourceTypeBucket(d.idType
 function cycleRestype(id,orig){
   const cur=restypeOverride[id]||orig;
   const next=RES_TYPES[(RES_TYPES.indexOf(cur)+1)%RES_TYPES.length];
-  if(next===orig) delete restypeOverride[id]; else restypeOverride[id]=next;
-  save();syncToBackend("restype_change",{id,from:cur,to:next});render();
+  const backToOrig=(next===orig);
+  if(backToOrig) delete restypeOverride[id]; else restypeOverride[id]=next;
+  recentRestype.add(id);
+  // 한 바퀴 돌아 원래 종류로 되돌아온 경우 로컬에서는 override를 지우지만,
+  // 백엔드에 종류명 그대로 보내면 다음 폴링(20초) 때 그 값이 override로 되살아나
+  // 복원 버튼과 강조표시가 유령처럼 다시 나타난다. 되돌림은 명시적 센티널로 보낸다.
+  save();syncToBackend("restype_change",{id,from:cur,to:backToOrig?"__revert_to_original__":next});render();
 }
 function revertRestype(id){
   const cur=restypeOverride[id];
   if(cur===undefined) return;
   delete restypeOverride[id];
+  recentRestype.add(id);
   save();syncToBackend("restype_change",{id,from:cur,to:"__revert_to_original__"});render();
 }
 function toggleReclass(id){
@@ -259,7 +269,11 @@ async function loadFromBackend(){
         if(r.field2==="__revert_to_original__") delete bdOverride[id]; else bdOverride[id]=r.field2;
       }
       else if(kind==="restype_change"){
-        if(r.field2==="__revert_to_original__") delete restypeOverride[id]; else restypeOverride[id]=r.field2;
+        // field2가 비어 있는 이벤트가 시트에 남아 있다(백엔드 v4로 restype_change를 처리하기 전에
+        // 기록된 것들). 그대로 대입하면 restypeOverride[id]="" 가 되는데, 이 값은 falsy라
+        // 표시되는 종류는 원본 그대로면서 `!==undefined` 검사만 통과해
+        // 복원 버튼과 강조표시가 켜진 채로 남는다. 빈 값은 되돌림과 동일하게 취급한다.
+        if(!r.field2||r.field2==="__revert_to_original__") delete restypeOverride[id]; else restypeOverride[id]=r.field2;
       }
       else if(kind==="reclass"){ reclass[id]={open:false,comment:r.field1,status:r.field2,result:r.field3||"",ts:r.ts}; }
       else if(kind==="prof"){
@@ -386,7 +400,7 @@ function render(){
   const visible=DATA.filter(d=>{
     const bd=effBd(d);
     if(catFilter&&d.cat!==catFilter)return false;
-    if(typeFilter&&effRestype(d)!==typeFilter)return false;
+    if(typeFilter&&effRestype(d)!==typeFilter&&!recentRestype.has(d.id))return false;
     if(statusFilter.type==="bd"&&bd!==statusFilter.value)return false;
     if(statusFilter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
     if(statusFilter.type==="held"&&d.status!=="HELD_ALREADY")return false;
@@ -504,7 +518,7 @@ function render(){
     `<div class="cat ${catFilter===c?'active':''}" data-idx="${i}"><b>${catCounts[c]}</b>${c}</div>`
   ).join("");
   [...catsEl.children].forEach((el,i)=>{
-    el.onclick=()=>{catFilter=(catFilter===cats[i])?null:cats[i];render();};
+    el.onclick=()=>{catFilter=(catFilter===cats[i])?null:cats[i];recentRestype.clear();render();};
   });
 
   const typeCounts={};
@@ -515,7 +529,7 @@ function render(){
     `<div class="cat ${typeFilter===t?'active':''}" data-idx="${i}"><b>${typeCounts[t]}</b>${t}</div>`
   ).join("");
   [...typesEl.children].forEach((el,i)=>{
-    el.onclick=()=>{typeFilter=(typeFilter===types[i])?null:types[i];render();};
+    el.onclick=()=>{typeFilter=(typeFilter===types[i])?null:types[i];recentRestype.clear();render();};
   });
 }
 render();
