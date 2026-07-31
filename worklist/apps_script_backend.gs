@@ -38,6 +38,8 @@ function doPost(e) {
     f1 = data.choice || ""; f2 = data.comment || "";
   } else if (kind === "unavailable") {
     f1 = data.field1 || "";
+  } else if (kind === "restype_change") {
+    f1 = data.from || ""; f2 = data.to || "";
   }
   sheet.appendRow([ts, kind, id, f1, f2, f3]);
   return ContentService.createTextOutput(JSON.stringify({ ok: true }))

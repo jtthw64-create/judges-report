@@ -179,6 +179,7 @@ TEMPLATE = r"""<!doctype html>
   .mbtn.on-prio{background:var(--gotink);color:#fff;border-color:var(--gotink)}
   .mbtn.on-skip{background:var(--sub);color:#fff}
   .mbtn.on-unavailable{background:var(--high);color:#fff;border-color:var(--high)}
+  .mbtn.on-restype{background:var(--accent);color:#fff;border-color:var(--accent)}
   .mbtn.cite-copy{margin-left:6px;vertical-align:middle}
   .pend{font-size:10px;color:var(--high);margin-top:2px}
   .ack{font-size:10px;color:var(--sub);display:flex;gap:4px;align-items:center;margin-top:3px}
@@ -259,6 +260,7 @@ TEMPLATE = r"""<!doctype html>
 /*DATA*/
 const SHEETS_ENDPOINT="__SHEETS_ENDPOINT__";
 const LBL={"통독":"Major","표적":"Secondary","off-list":"Off-list"};
+const BD_PRI_CLASS={"통독":"high","표적":"mid","off-list":"low"};
 const BD_CYCLE=["통독","표적","off-list"];
 const KEY_GOT="judges_dl_got_v1";
 const KEY_BD="judges_dl_bd_override_v1";
@@ -266,12 +268,15 @@ const KEY_BD_HIST="judges_dl_bd_history_v1";
 const KEY_RECLASS="judges_dl_reclass_v1";
 const KEY_PROF="judges_dl_prof_v1";
 const KEY_UNAVAILABLE="judges_dl_unavailable_v1";
+const KEY_RESTYPE="judges_dl_restype_override_v1";
+const RES_TYPES=["저널논문","단행본","북챕터","학위논문","사전·참고자료","기타"];
 let got=JSON.parse(localStorage.getItem(KEY_GOT)||"{}");
 let bdOverride=JSON.parse(localStorage.getItem(KEY_BD)||"{}");
 let bdHistory=JSON.parse(localStorage.getItem(KEY_BD_HIST)||"[]");
 let reclass=JSON.parse(localStorage.getItem(KEY_RECLASS)||"{}");
 let prof=JSON.parse(localStorage.getItem(KEY_PROF)||"{}");
 let unavailable=JSON.parse(localStorage.getItem(KEY_UNAVAILABLE)||"{}");
+let restypeOverride=JSON.parse(localStorage.getItem(KEY_RESTYPE)||"{}");
 let statusFilter={type:"all"};
 let catFilter=null;
 let typeFilter=null;
@@ -289,6 +294,7 @@ function save(){
   localStorage.setItem(KEY_RECLASS,JSON.stringify(reclass));
   localStorage.setItem(KEY_PROF,JSON.stringify(prof));
   localStorage.setItem(KEY_UNAVAILABLE,JSON.stringify(unavailable));
+  localStorage.setItem(KEY_RESTYPE,JSON.stringify(restypeOverride));
 }
 function setStatus(f){statusFilter=f;render()}
 function toggleAuthorSort(){authorSort=authorSort==="asc"?"desc":"asc";render()}
@@ -313,6 +319,19 @@ function revertBd(id){
   bdHistory.push(entry);
   delete bdOverride[id];
   save();syncToBackend("priority_change",entry);render();
+}
+function effRestype(d){return restypeOverride[d.id]||resourceTypeBucket(d.idType)}
+function cycleRestype(id,orig){
+  const cur=restypeOverride[id]||orig;
+  const next=RES_TYPES[(RES_TYPES.indexOf(cur)+1)%RES_TYPES.length];
+  if(next===orig) delete restypeOverride[id]; else restypeOverride[id]=next;
+  save();syncToBackend("restype_change",{id,from:cur,to:next});render();
+}
+function revertRestype(id){
+  const cur=restypeOverride[id];
+  if(cur===undefined) return;
+  delete restypeOverride[id];
+  save();syncToBackend("restype_change",{id,from:cur,to:"__revert_to_original__"});render();
 }
 function toggleReclass(id){
   const r=reclass[id]||{open:false,comment:"",status:null};
@@ -354,6 +373,9 @@ async function loadFromBackend(){
       else if(kind==="unavailable"){ unavailable[id]=(String(r.field1)==="true"); }
       else if(kind==="priority_change"){
         if(r.field2==="__revert_to_original__") delete bdOverride[id]; else bdOverride[id]=r.field2;
+      }
+      else if(kind==="restype_change"){
+        if(r.field2==="__revert_to_original__") delete restypeOverride[id]; else restypeOverride[id]=r.field2;
       }
       else if(kind==="reclass"){ reclass[id]={open:false,comment:r.field1,status:r.field2,result:r.field3||"",ts:r.ts}; }
       else if(kind==="prof"){
@@ -480,7 +502,7 @@ function render(){
   const visible=DATA.filter(d=>{
     const bd=effBd(d);
     if(catFilter&&d.cat!==catFilter)return false;
-    if(typeFilter&&resourceTypeBucket(d.idType)!==typeFilter)return false;
+    if(typeFilter&&effRestype(d)!==typeFilter)return false;
     if(statusFilter.type==="bd"&&bd!==statusFilter.value)return false;
     if(statusFilter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
     if(statusFilter.type==="held"&&d.status!=="HELD_ALREADY")return false;
@@ -505,11 +527,14 @@ function render(){
     const overridden=bdOverride[d.id]!==undefined;
     const rc=reclass[d.id]||{};
     const pf=prof[d.id]||{};
+    const origType=resourceTypeBucket(d.idType);
+    const curType=effRestype(d);
+    const rtOverridden=restypeOverride[d.id]!==undefined;
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
-      <td><div class="pri-wrap"><button class="pri ${d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
+      <td><div class="pri-wrap"><button class="pri ${BD_PRI_CLASS[bd]||d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
       <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="파일명 규칙으로 복사">📋 파일명</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="author-cell">${d.au}</td>
-      <td class="cite">${d.js}</td>
+      <td class="cite">${d.js}<div class="row" style="margin-top:5px"><button class="mbtn ${rtOverridden?'on-restype':''}" onclick="cycleRestype('${d.id}','${origType}')" title="클릭할 때마다 다음 자료종류로 전환">📚 ${curType}</button>${rtOverridden?`<button class="revert" onclick="revertRestype('${d.id}')">복원</button>`:""}</div></td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`}</td>
       <td class="ref">${d.ref}</td>
       <td class="panel">
@@ -559,7 +584,7 @@ function render(){
   });
 
   // 선택된 카테고리·자료종류 범위 안에서의 상태별 세부 현황(상태 필터와 독립적으로 항상 전체 상태를 보여줌 — 카테고리+상태 동시 적용 가능)
-  const scoped=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||resourceTypeBucket(d.idType)===typeFilter));
+  const scoped=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||effRestype(d)===typeFilter));
   const sTotal=scoped.length;
   const sDone=scoped.filter(d=>got[d.id]).length;
   const sHeld=scoped.filter(d=>d.status==="HELD_ALREADY").length;
@@ -599,7 +624,7 @@ function render(){
   });
 
   const typeCounts={};
-  DATA.forEach(d=>{const b=resourceTypeBucket(d.idType);typeCounts[b]=(typeCounts[b]||0)+1;});
+  DATA.forEach(d=>{const b=effRestype(d);typeCounts[b]=(typeCounts[b]||0)+1;});
   const types=Object.keys(typeCounts).sort((a,b)=>typeCounts[b]-typeCounts[a]);
   const typesEl=document.getElementById("types");
   typesEl.innerHTML = types.map((t,i)=>
