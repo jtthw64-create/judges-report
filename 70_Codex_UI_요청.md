@@ -6,7 +6,7 @@ to: Codex
 created: 2026-07-16
 status: DONE
 open_items: []
-done_items: [WO-001, WO-002, WO-003, WO-004]
+done_items: [WO-001, WO-002, WO-003, WO-004, WO-005~010(커맨더 직접 구현)]
 ---
 
 # 70 · Codex 작업 지시서
@@ -220,3 +220,32 @@ Codex 산출물을 실브라우저(로컬 http 서버)로 라이브 검증하는
 - 검증결과: WO-004 A안을 적용해 `render()` 시작 시 포커스된 `rc_`/`pf_` textarea의 id·입력값·선택 시작/끝을 캡처하고, 행 DOM 재생성 직후 같은 textarea에 값·포커스·커서(선택 범위)를 복원하도록 구현함. `python3 build_dashboard.py` 재생성 완료(1,051행), 생성 HTML 2종 내용 동일성 및 복원 로직 포함 여부 확인, 추출 JavaScript `node --check` 통과, `git diff --check` 통과. DOM 모의 실행으로 입력값·포커스·선택 범위 복원과 비대상 input 무시를 확인함. 기존 신청 버튼/blur 저장 및 백엔드 폴링 로직은 변경하지 않음.
 - CSV 확인: `worklist/download_queue.csv`는 Git HEAD 대비 diff 0이며 수정하지 않음.
 - 특이사항: 샌드박스가 로컬 HTTP 서버 포트 바인딩을 `PermissionError: [Errno 1] Operation not permitted`로 차단해 20초 폴링을 포함한 실브라우저 검증은 수행하지 못함. 생성물 문법·호출 순서·DOM 모의 테스트로 대체 검증함.
+
+---
+
+## WO-005 ~ WO-010 · 대시보드 기능 (2026-07-28~08-01, **커맨더 직접 구현 — Codex 위임 없음**)
+
+> 이 구간은 사용자 요구가 짧은 주기로 반복 조정돼(버튼명·규칙·색상 등) Codex 왕복보다 커맨더 직접 수정이 빨라 위임하지 않았다.
+> 향후 Codex가 대시보드를 만질 때 **아래 구조를 깨지 않도록** 참고할 것.
+
+### 구현된 기능
+| 항목 | 내용 |
+|---|---|
+| 📋 파일명 복사 | 각 행에서 `pdf-rename` 스킬 규칙(`저자 연도 제목_저널약어`)으로 클립보드 복사. 규칙 원본은 `../rename-pdf/`(참고 전용, 실행 금지) |
+| SBL 저널 약어 | 빌드 시점에 `../rename-pdf/OT_Journal_Abbreviations.md` + `abbreviations.md` §8.4.1을 파싱해 풀네임→약어 치환(623건 적용). 결과는 각 행의 `jsCite` 필드 |
+| 자료 종류 필터 | `id_type` 24종 혼재 → 6그룹(저널논문/단행본/북챕터/학위논문/사전·참고자료/기타) 정규화(`resourceTypeBucket`) |
+| 자료 종류 수동 재분류 | 행별 `cycleRestype`/`revertRestype`. `bdOverride`와 동일 패턴, 백엔드 `restype_change` kind로 동기화 |
+| 필터 3축 분리 | `catFilter`/`typeFilter`/`statusFilter` **독립 변수**. 카테고리+상태 동시 적용 가능 |
+| 범위 상태 표시줄 | `#scopeLabel` + `#catstats` — 선택 범위 안에서 받음/미수령/확보완료/확보불가/재검토대기 실시간 집계, 클릭 시 그 상태로 좁힘 |
+
+### 고친 버그 (재발 방지용)
+1. **textarea 값 소실**(WO-004) — 20초 폴링 `render()`가 DOM을 통째로 재생성해 입력 중 값이 날아감. `captureFocusedTextarea`/`restoreFocusedTextarea`로 값·포커스·커서 보존. **`render()`를 건드릴 때 이 호출쌍을 지우지 말 것.**
+2. **우선순위 배지 색상 불일치** — 텍스트는 `boundary`(통독/표적/off-list)로 뽑으면서 색상 클래스는 별도 필드 `priority`(high/mid/low)를 써서 **684건(30%)에서 텍스트-색상 불일치**. `BD_PRI_CLASS`로 bd→색상 매핑. **두 필드는 30% 어긋나 있으니 절대 섞어 쓰지 말 것.**
+3. **인용 제목 절단** — 단어수 기준 기계적 절단이 핵심어를 날림("...Song of Deborah in the" ← Septuagint 소실). 관사·전치사·접속사(`STOPWORDS`)를 세지 않는 **핵심어 개수** 기준으로 변경.
+4. **저널명 중복** — `journal_series`가 이미 `"Vetus Testamentum (VT)"` 형태면 전체 문자열이 약어표와 불일치해 치환 실패 → 괄호 앞부분 재조회 + 접두어 매칭 추가.
+
+### ⚠️ 백엔드 연동 시 필수
+새 `kind`를 클라이언트에 추가하면 **반드시** `worklist/apps_script_backend.gs`의 `doPost`에도 분기를 넣고 **실제 배포까지** 해야 한다(안 하면 field가 전부 빈 문자열로 저장). 현재 배포 = **버전 4**(2026-08-01, `restype_change` 포함). 상세는 `00_HANDOFF_Codex_대시보드.md`.
+
+### 검증 방법 메모
+브라우저 확장이 자주 끊긴다. 안 될 때는 **jsdom으로 `index.html`을 실제 렌더링**해 클릭·필터·복원까지 왕복 검증(`url:'http://localhost/index.html'` 지정 필수 — file:// origin은 localStorage 차단. `window.fetch` 스텁도 필요).

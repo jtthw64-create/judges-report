@@ -2,3 +2,6 @@
 *.bak
 __pycache__/
 *.xlsx
+*.bak_*
+worklist/monitor_state.json
+다운완료 미정리 파일/

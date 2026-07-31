@@ -51,12 +51,23 @@ mcp__codex-mcp__codex(
 
 | 작업 | 시각(KST) | 하는 일 |
 |---|---|---|
-| `judges-report-daily-refinement` | 매일 14:00 | 정제 배치(청크 3개) 승인 요청 → 승인 시 정제·CSV/트래커 갱신·대시보드 재생성·push |
+| ~~`judges-report-daily-refinement`~~ | ~~매일 14:00~~ | **종료·삭제됨(2026-07-20)** — 정제 큐 소진(23/23 청크 완료) |
 | `judges-report-reclass-review` | 매일 09:00 | 대시보드 재검토 신청 pending 건 AI 검토 → 결과 기록 → 필요시 CSV 정정 |
 
 파일 경로: `~/.claude/scheduled-tasks/<id>/SKILL.md` (텍스트 파일이라 수정 가능하나, 스키마 변경 시 반드시 함께 갱신)
 
-⚠️ **동시 편집 주의**: 위 두 시각 전후로 `download_queue.csv`·`20_PROGRESS_TRACKER.md`를 만지지 말 것.
+⚠️ **동시 편집 주의**: 위 시각 전후로 `download_queue.csv`·`20_PROGRESS_TRACKER.md`를 만지지 말 것.
+
+### 3-1. 감시루프 (세션 전용 — ★새 세션마다 재등록)
+`judges-report-reclass-review`가 **며칠씩 안 도는 사례가 반복 확인**되어(2026-07-28: 5일치 밀림, 이후에도 누락 발생), 커맨더 세션이 직접 도는 **감시루프**를 안전망으로 둔다.
+
+- 등록 수단: `CronCreate` → **세션 전용. 세션이 끝나면 사라지고 최대 7일 후 만료.** 새 세션에서 반드시 다시 등록할 것.
+- 사양(v3, 2026-07-31 확정): **1시간 간격**(`7 * * * *`), 매 회차 ① 신규 이벤트 중 미인식 kind·사유 빈 reclass 검사 ② **전체 reclass를 id별 최신만 남겨 `pending` 20분 초과 방치분 검사**(→ `STALE_PENDING_RECLASS` 보고). 이상 없으면 **침묵**(무응답 종료).
+- 상태 파일: `worklist/monitor_state.json` — 로컬 추적 전용, **커밋하지 않는다**.
+- 임계값을 점검주기(1h)보다 짧은 20분으로 둔 이유: 60분이면 타이밍에 따라 최대 2시간 가까이 방치될 수 있음.
+- 프롬프트 전문은 `20_PROGRESS_TRACKER.md`의 "세션 15" 로그 참조.
+
+⚠️ **백엔드 호출 주의**: Apps Script는 302로 `script.googleusercontent.com`에 넘긴다. GET은 `curl -s -L`로 되지만 **POST는 리다이렉트에서 메서드가 유실**된다 → **POST 후 `Location` 헤더를 뽑아 그 URL을 GET**하는 2단계 방식 필수.
 
 ## 4. 절대 규칙
 1. **원본 폴더 `../5 Book 3 Judges Resources/`는 읽기 전용.** 어떤 경우에도 쓰기·이동·삭제 금지.

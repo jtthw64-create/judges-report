@@ -1,7 +1,7 @@
 ---
 title: 진행 상태 추적기 (세션마다 갱신)
 type: tracker
-updated: 2026-07-13
+updated: 2026-08-01
 ---
 
 # 20 · PROGRESS TRACKER
@@ -40,10 +40,21 @@ updated: 2026-07-13
 | 11 | A-11 | General·ANE | ~150 | DONE | 2026-07-20 | worklist/A-11.csv (a/b/c 3분할 병합) |
 | 11 | A-12 | General·ANE | ~79 | DONE | 2026-07-20 | worklist/A-12.csv (a/b/c 3분할 병합) |
 
-**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2277항목**(HELD_ALREADY 72 포함) · UNRESOLVED 35
+**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2278항목**(QUEUED 2159 / HELD_ALREADY 119) · UNRESOLVED 35
+*(2026-08-01 기준. 정제 후 추가분: D-01-059 신규 1건. 확보완료는 수집 진행에 따라 계속 증가)*
 
 ## 다음 액션
 → **정제 단계 전량 완료(2026-07-20).** 23/23 청크 done, 원행 2395건 전건 처리. 일일 정제 예약 스케줄(`judges-report-daily-refinement`)은 큐 소진에 따라 종료·삭제됨(2026-07-19 사용자 사전승인).
+→ **현재 국면은 "수집 실행 + 대시보드 운영/개선"이다**(2026-07-28~08-01, 세션 15). 사용자가 실제로 자료를 내려받아 원본 폴더에 넣고, 대시보드에서 확보완료·재검토·확보불가를 표시하면 커맨더가 그때그때 반영한다. 아래 **운영 루틴**을 먼저 읽을 것.
+
+### ★ 새 세션 시작 시 즉시 할 일 (운영 루틴)
+1. **감시루프 재등록** — 대시보드 재검토 신청을 놓치지 않기 위한 안전망. **세션 전용(CronCreate)이라 세션이 끝나면 사라진다.** 새 세션에서 반드시 다시 만들 것. 사양은 아래 "세션 15" 로그의 감시루프 항목 참조(1시간 간격, pending 20분 초과 시 보고).
+2. **밀린 pending reclass 처리** — 재등록 전에 백엔드를 1회 수동 조회해 이미 밀려 있는 건이 없는지 확인(세션 공백 동안 쌓였을 수 있음).
+   ```
+   curl -s -L "https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec"
+   ```
+   → `kind=="reclass"`를 id별 최신만 남기고 `field2=="pending"`인 것을 처리. 처리 후 반드시 같은 엔드포인트에 `status:"ai_reviewed"` + `result`로 POST(안 하면 계속 미처리로 잡힌다).
+3. **신규 확보자료 반영** — 사용자가 원본 폴더에 파일을 추가했다면 `python3 worklist/held_audit.py` 재실행 → `/Nuri added/` 경로 후보만 신뢰하고 HELD_ALREADY 반영.
 
 **잔여 과제(사용자 지시 시 새 세션에서 착수)**
 1. **UNRESOLVED 35건 재식별** — OCR 손상으로 title 특정 실패. 주석서 3권 PDF 실물 참고문헌 대조가 필요(현 extracted/ 텍스트로는 복원 불가).
@@ -51,7 +62,47 @@ updated: 2026-07-13
    - 확인된 오탐군: `Göttingen:`(출판도시) · `Coniectanea Biblica`/`Biblica et Orientalia`(저널 Biblica 아님) · `Kurzgefasstes exegetisches Handbuch`/`Handkommentar zum AT`(Mohr HAT·Sellin KAT 아님) · `British School of Archaeology in Iraq`(저널 Iraq 아님) · `Anchor (Yale) Bible Reference Library`(사전류, AYB 주석 아님) · `Feminist Interpretation of the Bible` 등 제목 내 일반어 · `Studia Semitica Upsaliensia` · `Sheffield: JSOT Press` · `Subsidia/Analecta Biblica` · `JBL Monograph Series` · `Jewish Theological Seminary`.
    - 3자 이하 약어(VT·AB·HS·ZA·RA·BN 등)는 **뒤에 권호 숫자나 풀네임 병기 괄호가 오는 서지 맥락에서만** 인정할 것. 단독 매칭은 오탐 폭증.
 3. **A-12c-003 후속** — R1712 Zadok 1988은 xlsx가 Sasson;Smith 공동인용으로 병합했으나, Smith가 실제 인용한 것은 동일저자·동일연도의 별개 논문(*Biblische Notizen* 42[1988]:44-48). 해당 문헌은 이번 청크 범위 밖이라 행 미생성 — 별도 편입 검토 필요.
-4. **실제 자료 수집** — download_queue 2277항목(QUEUED 2205) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
+4. **실제 자료 수집(진행 중)** — download_queue **2278항목**(QUEUED 2159 / HELD_ALREADY 119) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
+5. **`다운완료 미정리 파일/` 폴더 정리** — 다운로드는 됐으나 원본 폴더로 안 옮겨진 파일이 남아 있다(Neubauer 3부작). `held_audit.py`는 원본 폴더만 스캔하므로 이 폴더는 자동 점검 대상 밖 — 사용자가 옮겨줘야 반영된다. 원본 폴더는 커맨더 쓰기 금지라 직접 이동 불가.
+6. **`.tmp/` 잔여 파일** — Google Drive 업로드 임시 캐시(`~/Library/CloudStorage/GoogleDrive-*/.tmp/`)에 정식 폴더로 안 옮겨진 자료가 다수 보인다(Suriano·Levin·Chisholm·Groß 등). 사용자 확인 후 정식 위치로 이동 필요.
+
+### 2026-07-28~08-01 · 세션 15 (수집 운영 국면 — 대시보드 개선 + 확보완료 반영 + 재검토 대응)
+정제가 끝난 뒤 처음으로 **"사용자가 실제 수집하고 커맨더가 반영"하는 운영 국면**을 돈 세션. 커밋 20여 개. download_queue **2277 → 2278항목**(신규 1건 추가), HELD_ALREADY **72 → 119건**.
+
+**A. 감시루프 도입 (★새 세션에서 재등록 필요)**
+- 대시보드 재검토 신청이 반복적으로 누락되는 문제가 있어(예약작업 `judges-report-reclass-review`가 며칠씩 안 도는 사례 확인) **커맨더 세션이 직접 도는 감시루프**를 만들었다. `CronCreate`로 등록 → **세션 전용, 세션 종료 시 소멸·최대 7일 만료**. 새 세션마다 다시 만들어야 한다.
+- 최종 사양(v3): **1시간 간격**, 매 회차마다 ① 백엔드 신규 이벤트 중 미인식 kind·사유 빈 reclass 검사 ② **전체 reclass를 id별 최신만 남겨 `pending`이 20분 이상 방치됐는지 검사**(→ `STALE_PENDING_RECLASS` 보고). 문제 없으면 침묵. 상태는 `worklist/monitor_state.json`(로컬 전용, 커밋 안 함).
+- 임계값 변천: 60분 → **20분**(점검 주기가 1시간인데 임계값도 60분이면 타이밍에 따라 최대 2시간 가까이 방치될 수 있어 하향). 간격도 15분 → 1시간으로 조정(사용자 지시).
+- ⚠️ **백엔드 GET/POST는 `curl -s -L`만으로는 안 된다** — Apps Script가 302로 `script.googleusercontent.com`에 넘기는데 POST는 메서드가 유실된다. **POST 후 Location 헤더를 뽑아 그 URL을 GET**하는 2단계 방식을 써야 한다(감시루프 스크립트에 그렇게 구현돼 있음).
+
+**B. 확보완료(HELD_ALREADY) 반영 — 72 → 119건**
+- 사용자가 원본 폴더에 자료를 대량 추가 → `held_audit.py` 재실행으로 **39건** 반영. `/Nuri added/` 경로 후보만 신뢰(그 외는 연도·성 우연일치 오탐 다수).
+- ★**`held_audit.py` 매칭 버그 발견·수정** — 성 추출 정규식 `[A-Za-zÀ-ÿ'-]`이 Latin-1 밖 문자(`ł` 등)를 버리고, 매칭도 파일명을 단어 단위로 쪼개 비교해서 **아포스트로피·하이픈 낀 성이 구조적으로 매칭 불가**였다(`Na'aman`→"na"+"aman"으로 분해). `letters_only()`로 양쪽을 "글자만 이어붙인 문자열"로 정규화 후 부분문자열 매칭으로 변경 → 이 버그로 누락돼 있던 **4건 추가 반영**(E-01-039 Na'aman, E-01-041 Niesiołowski-Spanò, A-03b-025 Groß, F-01-034 Wüst).
+- `.tmp/` 캐시·`다운완료 미정리 파일/`에서 찾은 것 **4건**(G-01-002 Athas, G-01-003 Biran, G-01-008 Fernández, G-01-014 Neubauer) 반영.
+- 기존 오탐 판정 2건(B-03b-014, A-08b-022)은 **계속 제외 유지** — 동일저자·동일연도의 별개 자료. 새 세션에서 다시 매칭 후보로 뜨더라도 반영하지 말 것.
+
+**C. 재검토(reclass) 처리 — 10여 건**
+데이터 오류를 여러 건 잡았다. 사용자 제보가 실제 오류로 이어진 비율이 높으니 성실히 볼 것.
+- **D-01-033**: 사용자가 준 DOI는 별개 논문이었고, 그 원논문(van Wolde 1995, ZAW 107)이 **bib 원본에는 있는데 정제 단계에서 누락**된 것을 발견 → **D-01-059로 신규 추가**(큐 2277→2278).
+- **E-01-044**: 저자 `Schmitz, [이름 미확정]` → **Schöpflin, Karin** 정정(사용자 제공 DOI로 확인), 쪽수·등급 보완.
+- **E-01-047**: `Oudtestamentische Studiën 2(1943)` 귀속이 **이전 정제 세션의 추정 오류**였음을 발견 — 실제 OTS Deel II 수록 목록에 해당 논문 없음, 원본 Groß 인용에도 수록처 정보가 애초에 없었음 → "미확정"으로 되돌림.
+- **G-01-008**: 연도 2005 → **1934** 정정(단행본이 아니라 Biblica지 논문). **G-01-011**·**G-01-021**: 수록 편집서 확정. **C-01c-037**: 접근링크를 서지목록 페이지 → 원문 PDF 직링크로 교체.
+- **I-01-003**(Rösel 1995 FS Donner): 원본 폴더·`.tmp` 전수 검색했으나 파일 미발견 → **미해결**. `2 Ehud/Rosel 1977 Zur Ehud-Erzahlung_ZAW.pdf`는 연도·수록처가 다른 **별개 논문**이니 혼동 말 것.
+
+**D. 대시보드 기능 (커맨더 직접 구현 — Codex 위임 없이)**
+- **📋 파일명 복사 버튼** — 각 항목을 `pdf-rename` 스킬의 파일명 규칙(`저자 연도 제목_저널약어`)으로 클립보드 복사. 규칙 원본은 `../rename-pdf/`(사용자가 올려둔 참고용 사본, **실행 금지·참고 전용** — 그 폴더 `00_참고용_안내.md` 참조). SBL 저널 약어표를 빌드 시점에 읽어 풀네임→약어 치환(623건 적용).
+- **필터 구조 3축 분리** — 카테고리·자료종류·상태가 한 변수를 공유해 서로 배타적이던 것을 독립 변수로 분리. 이제 "카테고리 + 상태" 동시 적용 가능. **"현재 범위" 상태 표시줄** 추가(선택 범위 안에서 받음/미수령/확보완료/확보불가/재검토대기 실시간 집계, 클릭 시 그 상태로 좁힘).
+- **자료 종류 필터 + 수동 재분류** — `id_type` 원본값이 24종 혼재라 6그룹(저널논문/단행본/북챕터/학위논문/사전·참고자료/기타)으로 정규화. '기타' 191건 중 **저널 화이트리스트로 확인되는 61건은 CSV의 id_type을 journal-ref로 직접 정정**, 나머지 애매한 건 자동 판정이 위험해(BZAW=총서, ThWAT=사전을 저널로 오판할 뻔) **행별 수동 재분류 버튼**(`cycleRestype`/`revertRestype`)을 대신 제공.
+- **버그 수정 3건**: ① 재검토 textarea가 20초 폴링 `render()`에 값이 날아가던 문제(포커스·커서 보존, Codex WO-004) ② 우선순위 배지가 텍스트는 `boundary`, 색상은 `priority`를 써서 **684건(30%)에서 텍스트-색상 불일치** ③ 인용 제목 절단이 핵심어를 날리던 문제.
+
+**E. Apps Script 백엔드 — 버전 4 배포 완료**
+- 자료종류 수동 재분류용 **`restype_change` kind 추가**(field1=이전, field2=새 값). 로컬 사본 `worklist/apps_script_backend.gs` + **실제 배포 모두 완료**(버전 4, 웹앱 URL 유지). 배포 후 실제 POST로 field 저장 검증함.
+- ⚠️ 편집 시 **클립보드 붙여넣기 금지** — `pbcopy`는 브라우저 클립보드에 반영되지 않아 엉뚱한 텍스트가 붙여넣어져 코드를 덮어쓴 사고가 있었다(cmd+z로 복구). **해당 분기 줄만 직접 타이핑**하는 방식이 안전하다. 저장 후 함수 드롭다운에 getSheet/doPost/doGet 3개가 다 보이면 구문 정상.
+- 시트에 테스트 행 2개(`TEST-RESTYPE-999`, `TEST-RESTYPE-V4`) 잔존 — 실제 항목 ID가 아니라 대시보드 영향 없음. 정리해도 무방.
+
+**F. 검증 방식 메모**
+- 브라우저 확장이 자주 끊긴다. 안 될 때는 **jsdom으로 `index.html`을 실제 렌더링**해 클릭·필터·복원까지 왕복 검증하는 방식이 잘 통했다(`/private/tmp/node_modules/jsdom`, `url:'http://localhost/index.html'` 지정 필수 — file:// origin은 localStorage가 막힘. `window.fetch` 스텁도 필요).
+- 확장이 끊겼을 땐 `list_connected_browsers` → 0개면 사용자에게 Chrome 실행 요청 → `select_browser`로 연결.
 
 ### 2026-07-20 · 세션 14 (A-10/A-11/A-12 9분할 병렬 — 무인 예약 실행 · **큐 소진 최종 회차**)
 - **A-10·A-11·A-12 (General·ANE, R1352~R1730, 379행) DONE** — 각 청크 3분할(총 9개) Sonnet 서브에이전트 동시 병렬 위임. 379행 → 서브에이전트 단계 371건 → UNRESOLVED 4건 격리 → **커맨더 교차중복 2건 병합 후 365건 신규 편입**. download_queue **1912 → 2277항목**. UNRESOLVED 31 → 35(+4).
