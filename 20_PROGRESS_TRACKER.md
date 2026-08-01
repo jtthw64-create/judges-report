@@ -40,8 +40,8 @@ updated: 2026-08-01
 | 11 | A-11 | General·ANE | ~150 | DONE | 2026-07-20 | worklist/A-11.csv (a/b/c 3분할 병합) |
 | 11 | A-12 | General·ANE | ~79 | DONE | 2026-07-20 | worklist/A-12.csv (a/b/c 3분할 병합) |
 
-**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2278항목**(QUEUED 2139 / HELD_ALREADY 139) · UNRESOLVED 35
-*(2026-08-01 세션16 기준. 정제 후 추가분: D-01-059 신규 1건. 확보완료는 수집 진행에 따라 계속 증가)*
+**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2278항목**(QUEUED 2133 / HELD_ALREADY 145) · UNRESOLVED 35
+*(2026-08-01 세션16-C 기준. 정제 후 추가분: D-01-059 신규 1건. 확보완료는 수집 진행에 따라 계속 증가)*
 
 ## 다음 액션
 → **정제 단계 전량 완료(2026-07-20).** 23/23 청크 done, 원행 2395건 전건 처리. 일일 정제 예약 스케줄(`judges-report-daily-refinement`)은 큐 소진에 따라 종료·삭제됨(2026-07-19 사용자 사전승인).
@@ -54,7 +54,7 @@ updated: 2026-08-01
    curl -s -L "https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec"
    ```
    → `kind=="reclass"`를 id별 최신만 남기고 `field2=="pending"`인 것을 처리. 처리 후 반드시 같은 엔드포인트에 `status:"ai_reviewed"` + `result`로 POST(안 하면 계속 미처리로 잡힌다).
-3. **신규 확보자료 반영** — 사용자가 원본 폴더에 파일을 추가했다면 `python3 worklist/held_audit.py` 재실행 → `/Nuri added/` 경로 후보만 신뢰하고 HELD_ALREADY 반영.
+3. **신규 확보자료 반영** — 사용자가 원본 폴더에 파일을 추가했다면 `python3 worklist/held_audit.py` 재실행 → `/Nuri added/` 경로 후보만 신뢰하고 HELD_ALREADY 반영. **같은 실행이 "확보완료 경로 점검"도 출력한다 — 공유 폴더는 교수님이 직접 파일명을 바꾸실 수 있어 기존 경로가 수시로 끊긴다(세션 16-C에서 32건 발생). 끊긴 경로가 보고되면 후보와 대조해 현행화할 것.**
 
 **잔여 과제(사용자 지시 시 새 세션에서 착수)**
 1. **UNRESOLVED 35건 재식별** — OCR 손상으로 title 특정 실패. 주석서 3권 PDF 실물 참고문헌 대조가 필요(현 extracted/ 텍스트로는 복원 불가).
@@ -62,9 +62,30 @@ updated: 2026-08-01
    - 확인된 오탐군: `Göttingen:`(출판도시) · `Coniectanea Biblica`/`Biblica et Orientalia`(저널 Biblica 아님) · `Kurzgefasstes exegetisches Handbuch`/`Handkommentar zum AT`(Mohr HAT·Sellin KAT 아님) · `British School of Archaeology in Iraq`(저널 Iraq 아님) · `Anchor (Yale) Bible Reference Library`(사전류, AYB 주석 아님) · `Feminist Interpretation of the Bible` 등 제목 내 일반어 · `Studia Semitica Upsaliensia` · `Sheffield: JSOT Press` · `Subsidia/Analecta Biblica` · `JBL Monograph Series` · `Jewish Theological Seminary`.
    - 3자 이하 약어(VT·AB·HS·ZA·RA·BN 등)는 **뒤에 권호 숫자나 풀네임 병기 괄호가 오는 서지 맥락에서만** 인정할 것. 단독 매칭은 오탐 폭증.
 3. **A-12c-003 후속** — R1712 Zadok 1988은 xlsx가 Sasson;Smith 공동인용으로 병합했으나, Smith가 실제 인용한 것은 동일저자·동일연도의 별개 논문(*Biblische Notizen* 42[1988]:44-48). 해당 문헌은 이번 청크 범위 밖이라 행 미생성 — 별도 편입 검토 필요.
-4. **실제 자료 수집(진행 중)** — download_queue **2278항목**(QUEUED 2159 / HELD_ALREADY 119) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
+4. **실제 자료 수집(진행 중)** — download_queue **2278항목**(QUEUED 2133 / HELD_ALREADY 145) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
 5. **`다운완료 미정리 파일/` 폴더 정리** — 다운로드는 됐으나 원본 폴더로 안 옮겨진 파일이 남아 있다(Neubauer 3부작). `held_audit.py`는 원본 폴더만 스캔하므로 이 폴더는 자동 점검 대상 밖 — 사용자가 옮겨줘야 반영된다. 원본 폴더는 커맨더 쓰기 금지라 직접 이동 불가.
 6. **`.tmp/` 잔여 파일** — Google Drive 업로드 임시 캐시(`~/Library/CloudStorage/GoogleDrive-*/.tmp/`)에 정식 폴더로 안 옮겨진 자료가 다수 보인다(Suriano·Levin·Chisholm·Groß 등). 사용자 확인 후 정식 위치로 이동 필요.
+
+### 2026-08-01 · 세션 16-C (확보완료 6건 + 리네임 경로 32건 복구 + 경로 파서 수정) ★공유폴더 리네임 전제
+**★전제 변경(사용자 확인)**: 공유 폴더는 **교수님도 직접 파일명을 바꾸실 수 있다.** 따라서 `[확보완료: 경로]`는 언제든 조용히 어긋날 수 있는 값이며, **경로 일치가 아니라 내용(저자·연도·제목 토큰) 기반으로 대조**해야 한다. 실제로 이번에 리네임 한 번으로 32건이 끊겨 있었다(`Auffret (2002) …` → `Auffret 2002 …` 식 괄호 제거, `Nuri added` 다수).
+
+**A. "받지 않은 파일이 있는가" 점검 결과 → 없음**
+- 원본 폴더 688개 파일 중 최근 추가분은 **전부 `Nuri added/` 하위**(= 사용자 본인 다운로드). 그 밖 폴더에서 7/13 이후 시각이 찍힌 5건은 기존 소장분의 동기화 시각 갱신이거나 `.tmp`에서 정식 위치로 옮겨진 것으로, 신규 자료 아님.
+
+**B. 확보완료 6건 반영** — A-07a-036(Liedke 1971) · A-07c-048(Michel 2003) · A-02a-014(Bodine 1980) · C-01a-038(Foster 2012) · B-01a-006(Amit 1987) · **C-01a-030**(Exum). HELD_ALREADY **139 → 145건**.
+- `C-01a-030`은 사용자 지시로 **`Exum (2012) Ch07_Why, Why, Why, Delilah_(pp.209-276).pdf`(세부 챕터)를 연결**하고, 수록서 전체본(`Exum 1996 Plotted, Shot, and Painted.pdf`)도 보유 중임을 notes에 병기.
+
+**C. 리네임된 확보완료 경로 32건 현행화** + 자동 추정 실패분은 수기 확인(G-01-001 Amit 1990 · G-01-010 Malamat 1970 · G-01-008 Fernández 1934 — 셋 다 리네임되어 원본 폴더에 실재).
+
+**D. ★확보완료 경로 파서 버그 수정 — 11건이 대시보드에서 "경로 확인 필요"로 표시되고 있었음**
+- 기존 정규식이 `\[확보완료:\s*(.*?)\]\s*$`로 **문자열 끝에 고정**돼 있어, 마커 뒤에 설명문이 붙은 노트(판본 불일치 사유·중복 보관 안내 등)에서는 경로를 통째로 못 읽었다. 해당 11건: I-01-001·C-01a-030·B-01a-001·B-02c-014·A-02a-033·A-02c-048·A-04a-031·A-04b-007·A-06b-026·A-08b-015·A-08c-021.
+- **'첫 번째 확장자까지'를 경로로 보는 규칙**으로 통일(`build_dashboard.py`·`held_audit.py` 양쪽). 파일명에 `[중복]`이 들어가거나 파일이 여럿 나열돼도(`…pdf; …pdf`, `…pdf, .epub 2종`) 안전. **HELD 145건 전건 경로 인식 확인.**
+- ⚠교훈: notes에 무언가 덧붙일 때 `[확보완료: …]` 마커를 문자열 끝에서 밀어내면 대시보드 표시가 깨진다. (이번 회차에 경고문을 마커 뒤에 붙였다가 즉시 발견·수정함.)
+
+**E. `held_audit.py`에 끊긴 경로 점검 기능 추가** — 매 실행마다 실재하지 않는 확보완료 경로를 보고하고 리네임 후보를 함께 제시. 리네임이 상시 발생하는 전제이므로 상설 점검으로 둔다.
+
+**F. 원본 폴더 밖에 있는 확보완료 5건(사용자 이동 필요)** — 대시보드 notes에 `⚠원본폴더 미이동` 표기:
+`G-01-002`(Athas 2006) · `G-01-003`(Biran 1994) · `G-01-016`(Noll 1995) · `A-03b-026`(Groß 1998 Zukunft für Israel) → 모두 `~/Library/CloudStorage/GoogleDrive-*/.tmp/` 캐시 / `G-01-014`(Neubauer 3부작) → `judges report/다운완료 미정리 파일/`. 원본 폴더는 커맨더 쓰기 금지라 직접 이동 불가.
 
 ### 2026-08-01 · 세션 16-B (대시보드 버그 2종 수정 + 링크없음 83건 접근링크 연결)
 **A. "열기" 버튼이 대시보드 자신을 새 탭으로 여는 버그**
