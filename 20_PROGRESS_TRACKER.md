@@ -82,8 +82,8 @@ updated: 2026-08-01
 - 최종: 실제 레코드 **62건**(DOI·저널·출판사·WorldCat·archive.org) + Scholar 검색폴백 **21건**(대부분 ThWAT/THAT 표제어가 OCR로 소실돼 논문 단위 URL이 원리적으로 특정 불가한 건들).
 - **링크 전수 HTTP 검증** 실시. 403은 봇차단(academia.edu·WorldCat·Cambridge·JSTOR)이라 정상 판정. 실제 사망 2건 교체: `A-11c-027`(JANES scholasticahq가 홈·목차·논문 전부 404 — 저널 플랫폼 자체 장애로 판단, 검색폴백 + 복구 시 재연결 필요를 note에 기재), `A-11c-042`(eprints.soas.ac.uk 도메인 무응답 → SOAS Research Online 신주소로 교체).
 
-**D. 서브에이전트가 부수 발견한 서지 정정 후보 — 미적용, 사용자 확인 대기**
-링크 작업 범위를 넘는 데이터 변경이라 반영하지 않았다. 채택 시 별도 지시 필요:
+**D. 서브에이전트가 부수 발견한 서지 정정 후보 — 데이터 미반영, 대시보드 안내만 추가(2026-08-01)**
+링크 작업 범위를 넘는 데이터 변경이라 CSV 필드는 직접 고치지 않았다. 대신 사용자 지시로 아래 8건 `notes`에 `🔍 서지정정 후보(커맨더 미반영 — 확인 후 동의하면 아래 '재검토 신청'을 눌러주세요): ...` 태그를 prepend해 대시보드에 노출(confidence C 항목은 자동으로 ⚠warn 스타일, 그 외는 ℹinfo 스타일로 표시됨). **사용자가 대시보드에서 보고 동의하면 기존 "재검토 신청" 버튼으로 직접 요청 → 감시루프가 pending을 잡아 처리하는 기존 파이프라인을 그대로 태운다.** 커맨더가 임의로 반영하지 않았음:
 - `A-06b-044` Köckert 절단 표제 복원 후보: "Elia. Literarische und religionsgeschichtliche Probleme in 1Kön 17-18"(pp.111-144, 쪽수 일치, 독립 2출처 교차확인)
 - `D-01-030` Kochavi 게재지 *Doron Hebraic Studies* 확정 근거 발견 → confidence 상향 검토 가능
 - `D-01-011` van Buuren **귀속 자체 의심** — ACEBT 19(2001) 수록 글은 사사기 19장 첩 주제로 드보라 노래가 아니고 연도도 불일치. bib_smith 재대조 권장
