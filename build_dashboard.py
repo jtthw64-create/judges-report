@@ -89,7 +89,12 @@ with open(CSV, encoding="utf-8") as f:
         conf = (r.get("confidence") or "").strip()
         notes = (r.get("notes") or "").strip()
         status = (r.get("status") or "").strip()
-        held_match = re.search(r"\[확보완료:\s*(.*?)\]\s*$", notes)
+        # 마커 뒤에 설명문(연도 불일치 사유·중복 보관 안내·미이동 경고 등)이 붙는 경우가 많아
+        # 예전처럼 문자열 끝($)에 고정하면 경로를 통째로 놓친다(실제로 11건이 '경로 확인 필요'로 표시됐음).
+        # 확장자로 끝나는 경로를 우선 인식하고(파일명에 '[중복]'처럼 대괄호가 들어가도 안전),
+        # 그래도 못 찾으면 종전 방식으로 후퇴한다.
+        held_match = (re.search(r"\[확보완료:\s*(.*?\.(?:pdf|epub|docx|doc))\]", notes, re.I)
+                      or re.search(r"\[확보완료:\s*(.*?)\]\s*$", notes))
         held_path = held_match.group(1).strip() if held_match else ""
         warn = info = ""
         if any(k in notes for k in WARN_KW) or conf == "C":
