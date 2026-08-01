@@ -82,3 +82,33 @@ print(f"\n후보 매치 수: {len(candidates)}")
 candidates.sort(key=lambda x: -x[5])
 for c in candidates:
     print(f"score={c[5]:2d} | {c[0]:12s} | {c[1][:30]:30s} {c[2]:5s} | {c[3]}\n           -> {c[4]}")
+
+# ── 확보완료 경로 건전성 점검 ──────────────────────────────────────────────
+# 공유 폴더는 교수님도 직접 파일명을 바꾸실 수 있다(2026-08-01 확인). 그래서 CSV에 적힌
+# `[확보완료: 경로]`가 조용히 어긋날 수 있다. 실제로 한 차례 리네임으로 32건이 끊겼었다.
+# 매 실행마다 끊긴 경로를 보고하고, 이름만 바뀐 것으로 보이는 후보를 함께 제시한다.
+# (파일명에 '[중복]'처럼 대괄호가 들어가므로 확장자로 끝나는 경로를 우선 인식한다.)
+def nfc(s):
+    return unicodedata.normalize("NFC", s)
+
+def held_path_of(notes):
+    # 노트 형태가 제각각이다: 경로 뒤에 판본 설명이 붙거나(`…pdf — 1970 재간`),
+    # 파일이 여럿 나열되거나(`…pdf; …pdf`, `…pdf, .epub 2종`), 파일명 자체에 `[중복]`이 들어간다.
+    # 그래서 '첫 번째 확장자까지'를 경로로 본다(뒤에 무엇이 오든 무관).
+    m = re.search(r"\[확보완료:\s*(.*?\.(?:pdf|epub|docx|doc))", notes, re.I)
+    return m.group(1).strip() if m else ""
+
+on_disk = {nfc(rel) for rel, _ in files}
+dangling = []
+for r in rows:
+    p = held_path_of(r.get("notes") or "")
+    if p and nfc(p) not in on_disk:
+        want = tokens(os.path.basename(p)) | tokens(r["author"]) | tokens(r["title"])
+        best = sorted(((len(tokens(os.path.basename(fp)) & want), fp) for fp, _ in files), reverse=True)
+        cand = best[0][1] if best and best[0][0] >= 3 else None
+        dangling.append((r["id"], p, cand))
+
+print(f"\n확보완료 경로 점검: 끊긴 경로 {len(dangling)}건")
+for i, p, cand in dangling:
+    print(f"  ✗ {i} | {p}")
+    print(f"      후보: {cand or '(자동 추정 실패 — 사람이 확인)'}")

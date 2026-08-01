@@ -93,7 +93,10 @@ with open(CSV, encoding="utf-8") as f:
         # 예전처럼 문자열 끝($)에 고정하면 경로를 통째로 놓친다(실제로 11건이 '경로 확인 필요'로 표시됐음).
         # 확장자로 끝나는 경로를 우선 인식하고(파일명에 '[중복]'처럼 대괄호가 들어가도 안전),
         # 그래도 못 찾으면 종전 방식으로 후퇴한다.
-        held_match = (re.search(r"\[확보완료:\s*(.*?\.(?:pdf|epub|docx|doc))\]", notes, re.I)
+        # 노트 형태가 제각각이다: 마커 뒤에 판본 설명이 붙거나, 파일이 여럿 나열되거나
+        # (`…pdf; …pdf`, `…pdf, .epub 2종`), 파일명 자체에 '[중복]'이 들어간다.
+        # '첫 번째 확장자까지'를 경로로 본다. 확장자가 없는 옛 표기는 종전 방식으로 후퇴.
+        held_match = (re.search(r"\[확보완료:\s*(.*?\.(?:pdf|epub|docx|doc))", notes, re.I)
                       or re.search(r"\[확보완료:\s*(.*?)\]\s*$", notes))
         held_path = held_match.group(1).strip() if held_match else ""
         warn = info = ""
