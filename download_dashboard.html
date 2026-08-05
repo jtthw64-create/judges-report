@@ -34,6 +34,9 @@
   th:nth-child(5){width:12%}th:nth-child(6){width:6%}th:nth-child(7){width:8%}th:nth-child(8){width:15%}th:nth-child(9){width:23%}
   .author-sort{width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer}
   .author-sort:hover,.author-sort:focus-visible{color:var(--accent)}
+  .sort-btn{padding:1px 5px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--sub);font:inherit;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .sort-btn:hover,.sort-btn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .sort-btn.on{color:var(--accent);border-color:var(--accent)}
   .author-cell{font-size:12px;font-weight:600}
   tr.got{background:var(--got)}tr.got td.title{color:var(--gotink)}
   tr.held{background:color-mix(in srgb,var(--card) 82%,var(--line));color:var(--sub)}
@@ -42,6 +45,8 @@
   .held-path{font-size:10px;line-height:1.35;color:var(--sub);font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
   tr.unavailable{box-shadow:inset 4px 0 0 var(--high)}
   .unavailable-badge{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--high);border-radius:10px;background:var(--warnbg);color:var(--high);font-size:10px;font-weight:700;white-space:nowrap;vertical-align:1px}
+  .skip-badge{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--line);border-radius:10px;color:var(--sub);font-size:10px;font-weight:700;white-space:nowrap;vertical-align:1px}
+  tr.skip td{opacity:.6}tr.skip .skip-badge,tr.skip .title{opacity:1}
   .pri{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;color:#fff;cursor:pointer;border:none}
   .pri.high{background:var(--high)}.pri.mid{background:var(--mid)}.pri.low{background:var(--low)}
   .pri-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -131,7 +136,7 @@
     <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
-    <th>받음</th><th>우선(클릭:전환)</th><th>자료</th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleAuthorSort()">저자 <span id="authorSortMark">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>코멘트</th>
+    <th>받음</th><th>우선(클릭:전환)</th><th id="titleHead" aria-sort="none">자료 <button class="sort-btn" type="button" onclick="toggleSort('ti')" title="제목순 정렬">제목 <span id="sortMark_ti">⇅</span></button> <button class="sort-btn" type="button" onclick="toggleSort('yr')" title="연도순 정렬">연도 <span id="sortMark_yr">⇅</span></button></th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleSort('au')">저자 <span id="sortMark_au">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>코멘트</th>
   </tr></thead><tbody id="rows"></tbody></table></div>
   <footer>
     ✔ <b>받음</b> 체크와 확보불가·재검토·코멘트·우선순위 변경은 이 브라우저에 자동 저장됩니다(localStorage)<span id="syncNote"></span>.<br>
@@ -168,7 +173,7 @@ let typeFilter=null;
 // 방금 사용자가 손댄 행은 필터를 무시하고 계속 보여줘서, 원하는 종류에 닿을 때까지 연속 클릭할 수 있게 한다.
 // 필터·검색을 새로 조작하면 비운다.
 let recentRestype=new Set();
-let authorSort=null;
+let sortKey=null,sortDir="asc";
 document.getElementById("syncNote").textContent = SHEETS_ENDPOINT ? "" : " (⚠ 서버 미연결 — 이 기기에만 저장됨)";
 
 function syncToBackend(kind,payload){
@@ -185,7 +190,13 @@ function save(){
   localStorage.setItem(KEY_RESTYPE,JSON.stringify(restypeOverride));
 }
 function setStatus(f){statusFilter=f;render()}
-function toggleAuthorSort(){authorSort=authorSort==="asc"?"desc":"asc";render()}
+// 저자·연도·제목 공통 정렬. 같은 키를 계속 누르면 오름차 → 내림차 → 해제(원래 순서)로 순환한다.
+function toggleSort(key){
+  if(sortKey!==key){ sortKey=key; sortDir="asc"; }
+  else if(sortDir==="asc"){ sortDir="desc"; }
+  else { sortKey=null; sortDir="asc"; }
+  render();
+}
 function toggle(id){got[id]=!got[id];save();syncToBackend("got",{id,got:got[id]});render()}
 function toggleUnavailable(id){
   unavailable[id]=!unavailable[id];
@@ -208,6 +219,11 @@ function revertBd(id){
   delete bdOverride[id];
   save();syncToBackend("priority_change",entry);render();
 }
+// '불필요'(코멘트 패널의 skip)로 표시한 항목. 확보불가와 함께 미수령 집계에서 뺀다.
+function isSkip(d){const p=prof[d.id];return !!(p&&p.choice==="skip")}
+// 미수령 = 아직 실제로 받아야 하는 것. 이미 받음·확보완료·확보불가·불필요는 제외한다.
+// (확보불가·불필요는 "더 볼 필요 없다"고 사용자가 판정한 것이라 남은 할 일 수치를 부풀리면 안 된다.)
+function isTodo(d){return !got[d.id]&&!unavailable[d.id]&&!isSkip(d)&&d.status!=="HELD_ALREADY"}
 function effRestype(d){return restypeOverride[d.id]||resourceTypeBucket(d.idType)}
 function cycleRestype(id,orig){
   const cur=restypeOverride[id]||orig;
@@ -387,9 +403,16 @@ function resourceTypeBucket(idType){
 function render(){
   const focusedTextarea=captureFocusedTextarea();
   const q=(document.getElementById("q").value||"").toLowerCase();
-  const authorHead=document.getElementById("authorHead");
-  document.getElementById("authorSortMark").textContent=authorSort==="asc"?"▲":authorSort==="desc"?"▼":"⇅";
-  authorHead.setAttribute("aria-sort",authorSort==="asc"?"ascending":authorSort==="desc"?"descending":"none");
+  ["au","yr","ti"].forEach(k=>{
+    const mark=document.getElementById("sortMark_"+k);
+    if(mark){
+      mark.textContent = sortKey===k ? (sortDir==="asc"?"▲":"▼") : "⇅";
+      if(mark.parentElement) mark.parentElement.classList.toggle("on", sortKey===k);
+    }
+  });
+  const ariaOf=k=>sortKey!==k?"none":(sortDir==="asc"?"ascending":"descending");
+  document.getElementById("authorHead").setAttribute("aria-sort",ariaOf("au"));
+  document.getElementById("titleHead").setAttribute("aria-sort",sortKey==="ti"||sortKey==="yr"?(sortDir==="asc"?"ascending":"descending"):"none");
   ["fAll","fMajor","fSecondary","fTodo"].forEach(x=>document.getElementById(x).classList.remove("active"));
   if(statusFilter.type==="all")document.getElementById("fAll").classList.add("active");
   if(statusFilter.type==="bd"&&statusFilter.value==="통독")document.getElementById("fMajor").classList.add("active");
@@ -402,7 +425,8 @@ function render(){
     if(catFilter&&d.cat!==catFilter)return false;
     if(typeFilter&&effRestype(d)!==typeFilter&&!recentRestype.has(d.id))return false;
     if(statusFilter.type==="bd"&&bd!==statusFilter.value)return false;
-    if(statusFilter.type==="todo"&&(got[d.id]||unavailable[d.id]||d.status==="HELD_ALREADY"))return false;
+    if(statusFilter.type==="todo"&&!isTodo(d))return false;
+    if(statusFilter.type==="skip"&&!isSkip(d))return false;
     if(statusFilter.type==="held"&&d.status!=="HELD_ALREADY")return false;
     if(statusFilter.type==="unavailable"&&!unavailable[d.id])return false;
     if(statusFilter.type==="reclass"&&!(reclass[d.id]&&reclass[d.id].status==="pending"))return false;
@@ -412,9 +436,28 @@ function render(){
     if(q&&!(d.au+d.ti+d.js).toLowerCase().includes(q))return false;
     return true;
   });
-  if(authorSort){
-    const direction=authorSort==="asc"?1:-1;
-    visible.sort((a,b)=>direction*a.au.localeCompare(b.au,undefined,{sensitivity:"base",numeric:true}));
+  if(sortKey){
+    const dir=sortDir==="asc"?1:-1;
+    const txt=(s)=>(s||"");
+    // 연도는 문자열 비교하면 "1990"과 "990?" 같은 값이 뒤섞이므로 숫자만 뽑아 비교하고,
+    // 연도가 없는 항목은 방향과 무관하게 항상 뒤로 보낸다.
+    const yearOf=(d)=>{const m=String(d.yr||"").match(/\d{3,4}/);return m?parseInt(m[0],10):null;};
+    visible.sort((a,b)=>{
+      if(sortKey==="yr"){
+        const ya=yearOf(a), yb=yearOf(b);
+        if(ya===null&&yb===null) return txt(a.au).localeCompare(txt(b.au),undefined,{sensitivity:"base"});
+        if(ya===null) return 1;
+        if(yb===null) return -1;
+        if(ya!==yb) return dir*(ya-yb);
+        return txt(a.au).localeCompare(txt(b.au),undefined,{sensitivity:"base"});
+      }
+      const key=sortKey==="ti"?"ti":"au";
+      const c=txt(a[key]).localeCompare(txt(b[key]),undefined,{sensitivity:"base",numeric:true});
+      if(c!==0) return dir*c;
+      // 동률이면 보조 기준으로 연도를 써서 순서가 매 렌더마다 흔들리지 않게 한다.
+      const ya=yearOf(a), yb=yearOf(b);
+      return (ya||0)-(yb||0);
+    });
   }
   visible.forEach(d=>{
     const bd=effBd(d);
@@ -422,6 +465,7 @@ function render(){
     if(got[d.id])tr.classList.add("got");
     if(d.status==="HELD_ALREADY")tr.classList.add("held");
     if(unavailable[d.id])tr.classList.add("unavailable");
+    if(isSkip(d))tr.classList.add("skip");
     const overridden=bdOverride[d.id]!==undefined;
     const rc=reclass[d.id]||{};
     const pf=prof[d.id]||{};
@@ -430,7 +474,7 @@ function render(){
     const rtOverridden=restypeOverride[d.id]!==undefined;
     tr.innerHTML=`<td><input type="checkbox" class="chk" ${got[d.id]?"checked":""} onchange="toggle('${d.id}')"></td>
       <td><div class="pri-wrap"><button class="pri ${BD_PRI_CLASS[bd]||d.pri}" onclick="cycleBd('${d.id}','${d.bd}')">${LBL[bd]||bd}</button>${overridden?`<button class="revert" onclick="revertBd('${d.id}')">복원</button>`:""}</div></td>
-      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="파일명 규칙으로 복사">📋 파일명</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
+      <td><div class="title">${d.ti}<span class="conf conf${d.conf}">${d.conf}</span>${d.status==='HELD_ALREADY'?`<span class="held-badge">확보완료</span>`:""}${unavailable[d.id]?`<span class="unavailable-badge">확보불가</span>`:""}${isSkip(d)?`<span class="skip-badge">불필요</span>`:""}</div><div class="cite">${d.yr} <button class="mbtn cite-copy" id="cite_${d.id}" onclick="copyCitation('${d.id}')" title="파일명 규칙으로 복사">📋 파일명</button></div>${d.warn?`<div class="note warn">⚠ ${d.warn}</div>`:""}${d.info?`<div class="note info">ℹ ${d.info}</div>`:""}</td>
       <td class="author-cell">${d.au}</td>
       <td class="cite">${d.js}<div class="row" style="margin-top:5px"><button class="mbtn ${rtOverridden?'on-restype':''}" onclick="cycleRestype('${d.id}','${origType}')" title="클릭할 때마다 다음 자료종류로 전환">📚 ${curType}</button>${rtOverridden?`<button class="revert" onclick="revertRestype('${d.id}')">복원</button>`:""}</div></td>
       <td>${d.status==='HELD_ALREADY'?`<div class="held-path" title="원본 폴더 경로">${d.heldPath||'경로 확인 필요'}</div>`:(d.link?`<a class="acc" href="${d.link}" target="_blank" rel="noopener">열기 ↗</a>`:`<span class="no-link" title="access_link 미기재 — 정제 시 누락">링크없음</span>`)}</td>
@@ -458,7 +502,8 @@ function render(){
   const total=DATA.length,done=DATA.filter(d=>got[d.id]).length;
   const held=DATA.filter(d=>d.status==="HELD_ALREADY").length;
   const unavailableCount=DATA.filter(d=>unavailable[d.id]).length;
-  const todo=DATA.filter(d=>!got[d.id]&&!unavailable[d.id]&&d.status!=="HELD_ALREADY").length;
+  const todo=DATA.filter(isTodo).length;
+  const skipCount=DATA.filter(isSkip).length;
   const reclassPending=Object.keys(reclass).filter(id=>reclass[id].status==="pending").length;
   const profUnread=Object.keys(prof).filter(id=>{const p=prof[id];return (p.comment||p.choice)&&!p.ack;}).length;
   const statDefs=[
@@ -467,6 +512,7 @@ function render(){
     {type:"todo",label:"미수령",n:todo},
     {type:"held",label:"확보완료",n:held},
     {type:"unavailable",label:"확보불가",n:unavailableCount},
+    {type:"skip",label:"불필요",n:skipCount},
     {type:"bd",value:"통독",label:"Major",n:DATA.filter(d=>effBd(d)==="통독").length},
     {type:"conf",value:"C",label:"C(확인요)",n:DATA.filter(d=>d.conf==="C").length},
     {type:"reclass",label:"재검토 대기",n:reclassPending,alert:!!reclassPending},
@@ -487,7 +533,8 @@ function render(){
   const sDone=scoped.filter(d=>got[d.id]).length;
   const sHeld=scoped.filter(d=>d.status==="HELD_ALREADY").length;
   const sUnavail=scoped.filter(d=>unavailable[d.id]).length;
-  const sTodo=scoped.filter(d=>!got[d.id]&&!unavailable[d.id]&&d.status!=="HELD_ALREADY").length;
+  const sSkip=scoped.filter(isSkip).length;
+  const sTodo=scoped.filter(isTodo).length;
   const sReclass=scoped.filter(d=>reclass[d.id]&&reclass[d.id].status==="pending").length;
   const scopeStatDefs=[
     {type:"all",label:"범위 전체",n:sTotal},
@@ -495,6 +542,7 @@ function render(){
     {type:"todo",label:"미수령",n:sTodo},
     {type:"held",label:"확보완료",n:sHeld},
     {type:"unavailable",label:"확보불가",n:sUnavail},
+    {type:"skip",label:"불필요",n:sSkip},
     {type:"reclass",label:"재검토 대기",n:sReclass,alert:!!sReclass},
   ];
   const scopeParts=[];
