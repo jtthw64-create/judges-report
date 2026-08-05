@@ -127,16 +127,18 @@
   <div class="cats" id="cats"></div>
   <h2 class="sec">자료 종류</h2>
   <div class="cats" id="types"></div>
+  <h2 class="sec">우선순위</h2>
+  <div class="cats" id="bds"></div>
   <div class="bar">
     <input id="q" placeholder="검색 (저자·제목·저널)…" oninput="render()">
-    <button id="fAll" onclick="setStatus({type:'all'})">전체</button>
-    <button id="fMajor" onclick="setStatus({type:'bd',value:'통독'})">Major</button>
-    <button id="fSecondary" onclick="setStatus({type:'bd',value:'표적'})">Secondary</button>
+    <button id="fAll" onclick="resetBar()">전체</button>
+    <button id="fMajor" onclick="setBd('통독')">Major</button>
+    <button id="fSecondary" onclick="setBd('표적')">Secondary</button>
     <button id="fTodo" onclick="setStatus({type:'todo'})">미수령만</button>
     <button class="refresh" onclick="location.reload()" title="최신 데이터 다시 불러오기">↻ 새로고침</button>
   </div>
   <div class="tablewrap"><table><thead><tr>
-    <th>받음</th><th>우선(클릭:전환)</th><th id="titleHead" aria-sort="none">자료 <button class="sort-btn" type="button" onclick="toggleSort('ti')" title="제목순 정렬">제목 <span id="sortMark_ti">⇅</span></button> <button class="sort-btn" type="button" onclick="toggleSort('yr')" title="연도순 정렬">연도 <span id="sortMark_yr">⇅</span></button></th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleSort('au')">저자 <span id="sortMark_au">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>코멘트</th>
+    <th>받음</th><th id="bdHead" aria-sort="none">우선(클릭:전환) <button class="sort-btn" type="button" onclick="toggleSort('bd')" title="우선순위순 정렬(Major 먼저)">정렬 <span id="sortMark_bd">⇅</span></button></th><th id="titleHead" aria-sort="none">자료 <button class="sort-btn" type="button" onclick="toggleSort('ti')" title="제목순 정렬">제목 <span id="sortMark_ti">⇅</span></button> <button class="sort-btn" type="button" onclick="toggleSort('yr')" title="연도순 정렬">연도 <span id="sortMark_yr">⇅</span></button></th><th id="authorHead" aria-sort="none"><button class="author-sort" type="button" onclick="toggleSort('au')">저자 <span id="sortMark_au">⇅</span></button></th><th>저널·시리즈</th><th>접근</th><th>원본 엑셀 위치</th><th>재검토 신청</th><th>코멘트</th>
   </tr></thead><tbody id="rows"></tbody></table></div>
   <footer>
     ✔ <b>받음</b> 체크와 확보불가·재검토·코멘트·우선순위 변경은 이 브라우저에 자동 저장됩니다(localStorage)<span id="syncNote"></span>.<br>
@@ -150,6 +152,7 @@ const DATA=[{"id": "G-01-001", "pri": "high", "bd": "통독", "cat": "Micah · D
 const SHEETS_ENDPOINT="https://script.google.com/macros/s/AKfycbzUwrljKotJQSPBTZn6_WbMFfjsdvAoozgO2TnJ2wnUUvF9xPxG6ZciYfY3DRmY44ZugQ/exec";
 const LBL={"통독":"Major","표적":"Secondary","off-list":"Off-list"};
 const BD_PRI_CLASS={"통독":"high","표적":"mid","off-list":"low"};
+const BD_RANK={"통독":0,"표적":1,"off-list":2};   // 정렬·칩 나열 순서(중요도 순)
 const BD_CYCLE=["통독","표적","off-list"];
 const KEY_GOT="judges_dl_got_v1";
 const KEY_BD="judges_dl_bd_override_v1";
@@ -169,6 +172,9 @@ let restypeOverride=JSON.parse(localStorage.getItem(KEY_RESTYPE)||"{}");
 let statusFilter={type:"all"};
 let catFilter=null;
 let typeFilter=null;
+// 우선순위(통독/표적/off-list)는 예전에 statusFilter 안에 들어 있어서 '미수령만'과 동시에 쓸 수 없었다.
+// 카테고리·자료종류처럼 독립 축으로 분리해 미수령+카테고리+자료종류+우선순위를 함께 적용할 수 있게 한다.
+let bdFilter=null;
 // 자료종류 필터가 걸린 상태에서 그 행의 종류를 바꾸면 즉시 필터 밖으로 밀려나 행이 사라진다.
 // 방금 사용자가 손댄 행은 필터를 무시하고 계속 보여줘서, 원하는 종류에 닿을 때까지 연속 클릭할 수 있게 한다.
 // 필터·검색을 새로 조작하면 비운다.
@@ -190,6 +196,10 @@ function save(){
   localStorage.setItem(KEY_RESTYPE,JSON.stringify(restypeOverride));
 }
 function setStatus(f){statusFilter=f;render()}
+function setBd(v){bdFilter=(bdFilter===v)?null:v;recentRestype.clear();render()}
+// 이 버튼 줄(전체·Major·Secondary·미수령만)은 한 묶음으로 읽히므로 '전체'는 그 줄의 선택을 모두 푼다.
+// 카테고리·자료종류는 별도 줄에 있어 그대로 둔다.
+function resetBar(){statusFilter={type:"all"};bdFilter=null;recentRestype.clear();render()}
 // 저자·연도·제목 공통 정렬. 같은 키를 계속 누르면 오름차 → 내림차 → 해제(원래 순서)로 순환한다.
 function toggleSort(key){
   if(sortKey!==key){ sortKey=key; sortDir="asc"; }
@@ -403,7 +413,7 @@ function resourceTypeBucket(idType){
 function render(){
   const focusedTextarea=captureFocusedTextarea();
   const q=(document.getElementById("q").value||"").toLowerCase();
-  ["au","yr","ti"].forEach(k=>{
+  ["au","yr","ti","bd"].forEach(k=>{
     const mark=document.getElementById("sortMark_"+k);
     if(mark){
       mark.textContent = sortKey===k ? (sortDir==="asc"?"▲":"▼") : "⇅";
@@ -412,11 +422,12 @@ function render(){
   });
   const ariaOf=k=>sortKey!==k?"none":(sortDir==="asc"?"ascending":"descending");
   document.getElementById("authorHead").setAttribute("aria-sort",ariaOf("au"));
+  document.getElementById("bdHead").setAttribute("aria-sort",ariaOf("bd"));
   document.getElementById("titleHead").setAttribute("aria-sort",sortKey==="ti"||sortKey==="yr"?(sortDir==="asc"?"ascending":"descending"):"none");
   ["fAll","fMajor","fSecondary","fTodo"].forEach(x=>document.getElementById(x).classList.remove("active"));
   if(statusFilter.type==="all")document.getElementById("fAll").classList.add("active");
-  if(statusFilter.type==="bd"&&statusFilter.value==="통독")document.getElementById("fMajor").classList.add("active");
-  if(statusFilter.type==="bd"&&statusFilter.value==="표적")document.getElementById("fSecondary").classList.add("active");
+  if(bdFilter==="통독")document.getElementById("fMajor").classList.add("active");
+  if(bdFilter==="표적")document.getElementById("fSecondary").classList.add("active");
   if(statusFilter.type==="todo")document.getElementById("fTodo").classList.add("active");
 
   const rows=document.getElementById("rows");rows.innerHTML="";
@@ -424,6 +435,7 @@ function render(){
     const bd=effBd(d);
     if(catFilter&&d.cat!==catFilter)return false;
     if(typeFilter&&effRestype(d)!==typeFilter&&!recentRestype.has(d.id))return false;
+    if(bdFilter&&bd!==bdFilter)return false;
     if(statusFilter.type==="bd"&&bd!==statusFilter.value)return false;
     if(statusFilter.type==="todo"&&!isTodo(d))return false;
     if(statusFilter.type==="skip"&&!isSkip(d))return false;
@@ -443,6 +455,14 @@ function render(){
     // 연도가 없는 항목은 방향과 무관하게 항상 뒤로 보낸다.
     const yearOf=(d)=>{const m=String(d.yr||"").match(/\d{3,4}/);return m?parseInt(m[0],10):null;};
     visible.sort((a,b)=>{
+      if(sortKey==="bd"){
+        // 오름차 = 중요한 것 먼저(통독 → 표적 → off-list). 사전순이 아니라 중요도 순이라야 쓸모가 있다.
+        const ra=BD_RANK[effBd(a)]??99, rb=BD_RANK[effBd(b)]??99;
+        if(ra!==rb) return dir*(ra-rb);
+        const c0=txt(a.au).localeCompare(txt(b.au),undefined,{sensitivity:"base",numeric:true});
+        if(c0!==0) return c0;
+        return (yearOf(a)||0)-(yearOf(b)||0);
+      }
       if(sortKey==="yr"){
         const ya=yearOf(a), yb=yearOf(b);
         if(ya===null&&yb===null) return txt(a.au).localeCompare(txt(b.au),undefined,{sensitivity:"base"});
@@ -519,16 +539,19 @@ function render(){
     {type:"prof",label:"코멘트 미확인",n:profUnread,alert:!!profUnread},
   ];
   document.getElementById("stats").innerHTML=statDefs.map((s,i)=>{
-    const isActive=statusFilter.type===s.type&&(s.value===undefined||statusFilter.value===s.value);
+    // 우선순위(bd)는 독립 축이라 statusFilter가 아니라 bdFilter로 판정한다.
+    const isActive = s.type==="bd" ? bdFilter===s.value
+                   : statusFilter.type===s.type&&(s.value===undefined||statusFilter.value===s.value);
     return `<div class="stat click ${s.alert?'alert':''} ${isActive?'active':''}" data-si="${i}"><b>${s.n}</b><span>${s.label}</span></div>`;
   }).join("") + `<div class="stat"><b>${shown}</b><span>표시중</span></div>`;
   [...document.getElementById("stats").children].slice(0,statDefs.length).forEach((el,i)=>{
     const s=statDefs[i];
-    el.onclick=()=>setStatus(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
+    el.onclick=()=> s.type==="bd" ? setBd(s.value)
+                 : setStatus(s.value!==undefined?{type:s.type,value:s.value}:{type:s.type});
   });
 
   // 선택된 카테고리·자료종류 범위 안에서의 상태별 세부 현황(상태 필터와 독립적으로 항상 전체 상태를 보여줌 — 카테고리+상태 동시 적용 가능)
-  const scoped=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||effRestype(d)===typeFilter));
+  const scoped=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||effRestype(d)===typeFilter)&&(!bdFilter||effBd(d)===bdFilter));
   const sTotal=scoped.length;
   const sDone=scoped.filter(d=>got[d.id]).length;
   const sHeld=scoped.filter(d=>d.status==="HELD_ALREADY").length;
@@ -548,6 +571,7 @@ function render(){
   const scopeParts=[];
   if(catFilter)scopeParts.push(catFilter);
   if(typeFilter)scopeParts.push(typeFilter);
+  if(bdFilter)scopeParts.push(LBL[bdFilter]||bdFilter);
   document.getElementById("scopeLabel").textContent=`현재 범위: ${scopeParts.length?scopeParts.join(" · "):"전체"} (${sTotal}건) — 아래 배지를 눌러 이 범위 안에서 상태로 다시 좁힐 수 있습니다`;
   document.getElementById("catstats").innerHTML=scopeStatDefs.map((s,i)=>{
     const isActive=statusFilter.type===s.type&&(s.value===undefined||statusFilter.value===s.value);
@@ -579,6 +603,18 @@ function render(){
   [...typesEl.children].forEach((el,i)=>{
     el.onclick=()=>{typeFilter=(typeFilter===types[i])?null:types[i];recentRestype.clear();render();};
   });
+
+  // 우선순위 칩. 카테고리·자료종류와 독립축이므로 함께 걸 수 있고,
+  // 표시 건수는 '지금 걸려 있는 다른 축' 안에서의 수라 무엇을 고르면 몇 건이 남는지 바로 보인다.
+  const bdBase=DATA.filter(d=>(!catFilter||d.cat===catFilter)&&(!typeFilter||effRestype(d)===typeFilter));
+  const bdCounts={};
+  bdBase.forEach(d=>{const b=effBd(d);bdCounts[b]=(bdCounts[b]||0)+1;});
+  const bds=Object.keys(bdCounts).sort((a,b)=>(BD_RANK[a]??99)-(BD_RANK[b]??99));
+  const bdsEl=document.getElementById("bds");
+  bdsEl.innerHTML = bds.map((t,i)=>
+    `<div class="cat ${bdFilter===t?'active':''}" data-idx="${i}"><b>${bdCounts[t]}</b>${LBL[t]||t}</div>`
+  ).join("");
+  [...bdsEl.children].forEach((el,i)=>{ el.onclick=()=>setBd(bds[i]); });
 }
 render();
 loadFromBackend();
