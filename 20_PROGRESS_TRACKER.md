@@ -40,7 +40,7 @@ updated: 2026-08-01
 | 11 | A-11 | General·ANE | ~150 | DONE | 2026-07-20 | worklist/A-11.csv (a/b/c 3분할 병합) |
 | 11 | A-12 | General·ANE | ~79 | DONE | 2026-07-20 | worklist/A-12.csv (a/b/c 3분할 병합) |
 
-**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2278항목**(QUEUED 2133 / HELD_ALREADY 145) · UNRESOLVED 35
+**집계:** 완료 **23 / 23청크 (전량 완료)** · 처리(원행) **2395 / 2395건** · download_queue **2286항목**(QUEUED 2141 / HELD_ALREADY 145) · UNRESOLVED 35
 *(2026-08-01 세션16-C 기준. 정제 후 추가분: D-01-059 신규 1건. 확보완료는 수집 진행에 따라 계속 증가)*
 
 ## 다음 액션
@@ -62,9 +62,31 @@ updated: 2026-08-01
    - 확인된 오탐군: `Göttingen:`(출판도시) · `Coniectanea Biblica`/`Biblica et Orientalia`(저널 Biblica 아님) · `Kurzgefasstes exegetisches Handbuch`/`Handkommentar zum AT`(Mohr HAT·Sellin KAT 아님) · `British School of Archaeology in Iraq`(저널 Iraq 아님) · `Anchor (Yale) Bible Reference Library`(사전류, AYB 주석 아님) · `Feminist Interpretation of the Bible` 등 제목 내 일반어 · `Studia Semitica Upsaliensia` · `Sheffield: JSOT Press` · `Subsidia/Analecta Biblica` · `JBL Monograph Series` · `Jewish Theological Seminary`.
    - 3자 이하 약어(VT·AB·HS·ZA·RA·BN 등)는 **뒤에 권호 숫자나 풀네임 병기 괄호가 오는 서지 맥락에서만** 인정할 것. 단독 매칭은 오탐 폭증.
 3. **A-12c-003 후속** — R1712 Zadok 1988은 xlsx가 Sasson;Smith 공동인용으로 병합했으나, Smith가 실제 인용한 것은 동일저자·동일연도의 별개 논문(*Biblische Notizen* 42[1988]:44-48). 해당 문헌은 이번 청크 범위 밖이라 행 미생성 — 별도 편입 검토 필요.
-4. **실제 자료 수집(진행 중)** — download_queue **2278항목**(QUEUED 2133 / HELD_ALREADY 145) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
+4. **실제 자료 수집(진행 중)** — download_queue **2286항목**(QUEUED 2141 / HELD_ALREADY 145) 기준 다운로드 실행. C등급 113건은 수령 시 원문 최종 확인 필수.
 5. **`다운완료 미정리 파일/` 폴더 정리** — 다운로드는 됐으나 원본 폴더로 안 옮겨진 파일이 남아 있다(Neubauer 3부작). `held_audit.py`는 원본 폴더만 스캔하므로 이 폴더는 자동 점검 대상 밖 — 사용자가 옮겨줘야 반영된다. 원본 폴더는 커맨더 쓰기 금지라 직접 이동 불가.
 6. **`.tmp/` 잔여 파일** — Google Drive 업로드 임시 캐시(`~/Library/CloudStorage/GoogleDrive-*/.tmp/`)에 정식 폴더로 안 옮겨진 자료가 다수 보인다(Suriano·Levin·Chisholm·Groß 등). 사용자 확인 후 정식 위치로 이동 필요.
+
+### 2026-08-14 · 세션 17 (긴급 카테고리 신설 — 사용자 제공 재대조 목록 반영)
+사용자가 `사사기_미보유_도서와_필요_논문집_2026-08-14.xlsx`(iCloud Downloads)를 주며 "긴급 카테고리로 대시보드에 추가"를 지시.
+
+**★핵심 발견: 이 파일은 신규 자료 목록이 아니라 기존 큐의 재대조 결과였다.**
+- 35건(도서 판정 28 + 필요 논문집 7)을 큐 2278행과 전수 대조 → **34건이 이미 큐에 존재**. 그대로 추가했다면 중복 34행이 생길 뻔했다(1차 시도에서 실제로 35행을 넣었다가 백업본으로 되돌림).
+- 파일의 `원목록 행`(1694·2185·172…)이 원본 목록 행번호를 가리키는 것과 정합.
+- **필요 논문집 7권은 권 자체는 큐에 없으나, 그 안의 "필요 장" 7편이 전부 개별 논문으로 이미 큐에 있었다**(Mobley B-02c-018 · Müller B-02c-022 · Naʾaman B-02c-028 · Schneider D-01-046 · Way B-03c-016 · Popko C-01c-016 · Maeir C-01b-035 · Way C-01c-036).
+- ✅**교차검증 성과**: 원목록의 "보유—제외" 6건 중 큐에 있는 5건이 **전부 우리 큐의 HELD_ALREADY와 일치**(O'Connell·Yee·Bluedorn·Groß). 서로 독립적으로 만든 두 판정이 맞아떨어짐.
+
+**반영 내역(사용자 승인 후)** — download_queue **2278 → 2286행**, 긴급 카테고리 **34건**(QUEUED 29 / HELD_ALREADY 5):
+1. **기존 26행을 `긴급 (2026-08-14)`으로 이동** — category만 바꾸고 원 카테고리는 notes에 보존(`[긴급목록 2026-08-14] 원 카테고리: …`). 원목록 우선순위 A/B/C를 priority(high/mid/low)로 반영. xlsx 27행 → 큐 26행인 이유는 O'Connell 1996이 xlsx 안에서 A행·C행에 중복 기재됐기 때문(파일 자체가 "중복/저자 표기 오류 가능"으로 표시).
+2. **신규 8건 추가** — `U-01-001` Edenburg 2016(도서 중 유일한 큐 미존재분) + `U-01-002~008` 논문집 7권.
+3. **논문집↔개별논문 상호참조 8건** — 논문집 행에는 "큐 내 해당 개별논문: …", 개별논문 행에는 "이 논문의 수록 논문집(U-xx)을 권 단위로 확보 대상에 편입함"을 기재. 어느 쪽을 구해도 추적 가능.
+
+**★원목록 저자 오류 4건 적발(기존 큐 쪽이 정확 — 정정하지 않고 notes에 근거만 기록)**
+- `B-02b-006`: 원목록 "Victor Avigdor Hurowitz 2014, Judges 1–12 AYB" → 실제 **Sasson, Jack M.** 저작이며 **본 큐에서는 이미 확보완료**. 원목록의 "미보유" 판정은 저자 오귀속에서 비롯된 오류로 보임.
+- `B-03c-019`: "Jeffrey S. Whitt" → **Whitt, William**
+- `B-02c-013`: "David W. H. Mayes" → **Mayes, A. D. H.**
+- `B-01b-022`: "Hélène M. Dallaire Conway" → **Conway, Mary L.**
+
+**교훈**: 외부에서 받은 목록은 "신규"로 단정하지 말고 **편입 전에 기존 큐와 전수 대조**할 것. 이번엔 저자 성+연도 일치만으로 후보를 뽑아 사람 눈으로 확인했는데, 불용어를 과하게 넣으면(`richter`·`judges` 등) 오히려 실제 중복이 가려지므로 느슨하게 뽑아 눈으로 거르는 편이 안전하다.
 
 ### 2026-08-01 · 세션 16-C (확보완료 6건 + 리네임 경로 32건 복구 + 경로 파서 수정) ★공유폴더 리네임 전제
 **★전제 변경(사용자 확인)**: 공유 폴더는 **교수님도 직접 파일명을 바꾸실 수 있다.** 따라서 `[확보완료: 경로]`는 언제든 조용히 어긋날 수 있는 값이며, **경로 일치가 아니라 내용(저자·연도·제목 토큰) 기반으로 대조**해야 한다. 실제로 이번에 리네임 한 번으로 32건이 끊겨 있었다(`Auffret (2002) …` → `Auffret 2002 …` 식 괄호 제거, `Nuri added` 다수).
